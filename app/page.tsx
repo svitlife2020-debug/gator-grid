@@ -1,114 +1,103 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import {
-  CalendarDays,
-  Trophy,
-  Heart,
-  Star,
-  Shield,
-  BookOpen,
-  Users,
-  CheckCircle,
-  Clock,
-  MapPin,
-  Loader2,
-  AlertCircle,
-  ChevronRight,
-  Sparkles,
+  CalendarDays, Trophy, Heart, Star, Shield, BookOpen, Users,
+  CheckCircle, Clock, MapPin, Loader2, AlertCircle, ChevronRight,
+  Sparkles, X, Menu, Bell, Mail, Phone, Facebook, Instagram, Youtube,
 } from "lucide-react";
 
+// ═════════════════════════════════════════════════════════════
+// TYPES
+// ═════════════════════════════════════════════════════════════
 interface DashboardData {
-  fundraisingGoal: number;
-  fundraisingCurrent: number;
-  volunteerHoursGoal: number;
-  volunteerHoursCurrent: number;
-  nextEventName?: string;
-  nextEventDate?: string;
+  fundraisingGoal: number; fundraisingCurrent: number;
+  volunteerHoursGoal: number; volunteerHoursCurrent: number;
+  nextEventName?: string; nextEventDate?: string;
 }
-
 interface SchoolEvent {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  description: string;
-  category: string;
+  id: string; title: string; date: string; time: string;
+  location: string; description: string; category: string;
 }
-
 interface Sponsor {
-  id: string;
-  name: string;
-  tier: "Gold" | "Silver" | "Bronze" | "Community";
-  website?: string;
-  logoUrl?: string;
-  tagline?: string;
+  id: string; name: string; tier: "Gold" | "Silver" | "Bronze" | "Community";
+  website?: string; logoUrl?: string; tagline?: string;
 }
-
+interface Announcement {
+  id: string; message: string; type?: "info" | "warning" | "success";
+}
 interface VolunteerFormData {
-  volunteerName: string;
-  volunteerEmail: string;
-  eventName: string;
-  hoursLogged: string;
-  notes: string;
+  volunteerName: string; volunteerEmail: string;
+  eventName: string; hoursLogged: string; notes: string;
 }
-
+interface ContactFormData {
+  contactName: string; contactEmail: string; subject: string; message: string;
+}
 type FormStatus = "idle" | "loading" | "success" | "error";
 
-function sanitizeInput(value: string): string {
-  return value.replace(/<[^>]*>/g, "").replace(/[<>"'`]/g, "").trim().slice(0, 500);
+// ═════════════════════════════════════════════════════════════
+// HELPERS
+// ═════════════════════════════════════════════════════════════
+function sanitizeInput(v: string): string {
+  return v.replace(/<[^>]*>/g, "").replace(/[<>"'`]/g, "").trim().slice(0, 500);
+}
+function isValidEmail(e: string): boolean {
+  return /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/.test(e);
 }
 
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/.test(email);
-}
+// ═════════════════════════════════════════════════════════════
+// CONSTANTS
+// ═════════════════════════════════════════════════════════════
+const API_URL = "https://script.google.com/macros/s/AKfycbz4lb3YslgAVDobLHrha7RgCyV1tGrf5GNlk42Lb1DV4n914NNfVaSReQL4nkJYqs0BiA/exec";
+const LOGO_URL = "https://cmsv2-assets.apptegy.net/uploads/7712/logo/8923/Martin_County_Bessey_Creek_Circle_Crest_Logo__2_.png";
+const CALENDAR_URL = "https://www.martinschools.org/o/bces/events?view=cal-month";
 
-function buildApiUrl(base: string, tab: string): string | null {
-  try {
-    const url = new URL(base);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    url.searchParams.set("tab", encodeURIComponent(tab));
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
-const API_URL = process.env.NEXT_PUBLIC_GOOGLE_APPS_SCRIPT_URL ?? "";
-
-const COLORS = {
-  green: "#006400",
-  greenMid: "#2d9e2d",
-  gold: "#F5C400",
-  yellowShield: "#e6b800",
-  red: "#c0392b",
-  blue: "#1a6faf",
-  silver: "#8e9eab",
+// Logo-matched palette — vibrant green from school crest
+const C = {
+  green:      "#2D9B4E",   // vibrant green from logo
+  greenDark:  "#1e7039",   // darker shade for depth
+  greenLight: "#e8f5ec",   // light green tint
+  gold:       "#D4AF37",   // rich gold
+  goldLight:  "#f5edd6",
+  cream:      "#fafaf7",   // warm off-white
+  ink:        "#1a1f1a",   // near-black text
+  muted:      "#6b7a6b",   // muted green-gray
+  border:     "#d4e0d4",
+  red:        "#c0392b",   // from logo shield
+  blue:       "#2874A6",   // from logo shield
+  silver:     "#8e9eab",
 };
 
-const STAR_VALUES = [
-  { icon: Shield,      letter: "S", label: "Stay Safe",          accent: COLORS.green,        bg: "#e8f5e9" },
-  { icon: CheckCircle, letter: "T", label: "Take Responsibility", accent: COLORS.red,          bg: "#fdecea" },
-  { icon: BookOpen,    letter: "A", label: "Actively Learn",      accent: COLORS.blue,         bg: "#e3f0fa" },
-  { icon: Heart,       letter: "R", label: "Respect Others",      accent: COLORS.yellowShield, bg: "#fffde7" },
+const NAV_LINKS = [
+  { label: "Progress",  href: "#progress" },
+  { label: "Events",    href: "#events" },
+  { label: "Volunteer", href: "#volunteer" },
+  { label: "Sponsors",  href: "#sponsors" },
+  { label: "Calendar",  href: "#calendar" },
+  { label: "Contact",   href: "#contact" },
 ];
 
-const FALLBACK_DASHBOARD: DashboardData = {
-  fundraisingGoal: 10000,
-  fundraisingCurrent: 6800,
-  volunteerHoursGoal: 500,
-  volunteerHoursCurrent: 312,
-  nextEventName: "Spring Carnival",
-  nextEventDate: "May 17, 2025",
-};
+const STAR_VALUES = [
+  { icon: Shield,      letter: "S", label: "Stay Safe",           accent: C.green, bg: C.greenLight },
+  { icon: CheckCircle, letter: "T", label: "Take Responsibility", accent: C.red,   bg: "#fdecea" },
+  { icon: BookOpen,    letter: "A", label: "Actively Learn",      accent: C.blue,  bg: "#e8f0fb" },
+  { icon: Heart,       letter: "R", label: "Respect Others",      accent: C.gold,  bg: C.goldLight },
+];
 
+// ═════════════════════════════════════════════════════════════
+// FALLBACK DATA
+// ═════════════════════════════════════════════════════════════
+const FALLBACK_DASHBOARD: DashboardData = {
+  fundraisingGoal: 10000, fundraisingCurrent: 6800,
+  volunteerHoursGoal: 500, volunteerHoursCurrent: 312,
+  nextEventName: "Spring Carnival", nextEventDate: "May 17, 2025",
+};
 const FALLBACK_EVENTS: SchoolEvent[] = [
   { id: "1", title: "Spring Carnival", date: "May 17, 2025", time: "10:00 AM – 3:00 PM", location: "School Grounds", description: "Annual spring carnival with games, food, and fun for the whole family!", category: "Community" },
   { id: "2", title: "PTA Meeting", date: "April 8, 2025", time: "6:30 PM", location: "Media Center", description: "Monthly PTA meeting open to all parents and guardians.", category: "Meeting" },
   { id: "3", title: "Science Night", date: "April 24, 2025", time: "5:00 PM – 7:00 PM", location: "Gymnasium", description: "Celebrate STEM with student-led science projects and demonstrations.", category: "Academic" },
 ];
-
 const FALLBACK_SPONSORS: Sponsor[] = [
   { id: "1", name: "Gator Grille",        tier: "Gold",      tagline: "Fueling Gator Pride since 2018" },
   { id: "2", name: "CreekSide Dental",    tier: "Gold",      tagline: "Healthy smiles, bright futures" },
@@ -117,80 +106,250 @@ const FALLBACK_SPONSORS: Sponsor[] = [
   { id: "5", name: "Sunrise Bakery",      tier: "Bronze",    tagline: "Sweet treats for sweet students" },
   { id: "6", name: "First Coast Finance", tier: "Community", tagline: "Investing in tomorrow" },
 ];
+const FALLBACK_ANNOUNCEMENTS: Announcement[] = [
+  { id: "1", message: "🎉 Spring Carnival tickets now on sale — get yours before they sell out.", type: "success" },
+];
 
-async function fetchSheet<T>(tab: string, fallback: T): Promise<T> {
-  if (!API_URL) return fallback;
-  const safeUrl = buildApiUrl(API_URL, tab);
-  if (!safeUrl) return fallback;
+// ═════════════════════════════════════════════════════════════
+// DATA FETCHING
+// ═════════════════════════════════════════════════════════════
+async function fetchTab<T>(tab: string, fallback: T): Promise<T> {
   try {
-    const res = await fetch(safeUrl, { headers: { Accept: "application/json" } });
+    const url = new URL(API_URL);
+    url.searchParams.set("tab", tab);
+    const res = await fetch(url.toString());
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const contentType = res.headers.get("content-type") ?? "";
-    if (!contentType.includes("application/json")) throw new Error("Unexpected content-type");
     const json = await res.json();
-    return (json?.data ?? fallback) as T;
-  } catch {
+    if (Array.isArray(json?.data) && json.data.length > 0) return json.data as T;
+    if (json?.data && !Array.isArray(json.data)) return json.data as T;
     return fallback;
-  }
+  } catch { return fallback; }
 }
 
-function Card({ children, className = "", gold = false }: { children: React.ReactNode; className?: string; gold?: boolean }) {
+async function postToSheet(payload: Record<string, string>): Promise<void> {
+  await fetch(API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(payload).toString(),
+  });
+}
+
+// ═════════════════════════════════════════════════════════════
+// DESIGN TOKENS & SHARED STYLES
+// ═════════════════════════════════════════════════════════════
+const diamondDivider = (
+  <div className="flex items-center gap-4 my-6">
+    <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, transparent, ${C.gold}66, transparent)` }} />
+    <div className="w-1.5 h-1.5 rotate-45" style={{ background: C.gold }} />
+    <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, transparent, ${C.gold}66, transparent)` }} />
+  </div>
+);
+
+function inputCls(hasError?: boolean) {
+  return [
+    "w-full rounded-xl px-4 py-3.5 text-sm transition-all duration-200 outline-none",
+    "border focus:ring-2",
+    hasError
+      ? "border-red-400 bg-red-50 focus:ring-red-100"
+      : `border-[${C.border}] bg-white focus:border-[${C.gold}] focus:ring-[${C.gold}22] focus:bg-white`,
+  ].join(" ");
+}
+
+// ═════════════════════════════════════════════════════════════
+// ANNOUNCEMENT BANNER
+// ═════════════════════════════════════════════════════════════
+function AnnouncementBanner({ announcements }: { announcements: Announcement[] }) {
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const visible = announcements.filter((a) => !dismissed.has(a.id));
+  if (!visible.length) return null;
+  const ann = visible[0];
   return (
-    <div className={["rounded-2xl border transition-all duration-300", gold ? "bg-yellow-50 border-yellow-300 shadow-[0_4px_20px_rgba(245,196,0,0.25)]" : "bg-white border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.08)]", "hover:shadow-[0_4px_24px_rgba(0,100,0,0.12)] hover:border-green-300", className].join(" ")}>
-      {children}
+    <div className="w-full px-6 py-3 flex items-center justify-between gap-4"
+      style={{ background: C.green, borderBottom: `2px solid ${C.gold}` }}>
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <Bell className="w-3.5 h-3.5 flex-shrink-0" style={{ color: C.gold }} />
+        <p className="text-xs font-medium tracking-wide truncate" style={{ color: "white" }}>
+          {ann.message}
+        </p>
+      </div>
+      <button onClick={() => setDismissed(d => new Set([...d, ann.id]))}
+        className="flex-shrink-0 p-1 rounded hover:opacity-70 transition-opacity" aria-label="Dismiss">
+        <X className="w-3.5 h-3.5" style={{ color: C.gold }} />
+      </button>
     </div>
   );
 }
 
-function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+// ═════════════════════════════════════════════════════════════
+// NAVBAR
+// ═════════════════════════════════════════════════════════════
+function Navbar() {
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", fn);
+    return () => document.removeEventListener("mousedown", fn);
+  }, []);
+
   return (
-    <div className="flex items-center gap-3 mb-8">
-      <div className="p-2.5 rounded-xl" style={{ background: "#e8f5e9", border: `1.5px solid ${COLORS.greenMid}40` }}>
-        <Icon className="w-5 h-5" style={{ color: COLORS.green }} />
+    <nav className="sticky top-0 z-50 w-full transition-all duration-500"
+      style={{
+        background: scrolled ? "rgba(255,255,255,0.98)" : "white",
+        borderBottom: `1px solid ${scrolled ? C.border : C.border}44`,
+        boxShadow: scrolled ? "0 4px 32px rgba(45,155,78,0.08)" : "none",
+        backdropFilter: scrolled ? "blur(12px)" : "none",
+      }}>
+      <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between gap-6" style={{ height: 68 }}>
+        {/* Brand */}
+        <a href="#top" className="flex items-center gap-3 flex-shrink-0 group">
+          <div className="relative">
+            <Image src={LOGO_URL} alt="Bessey Creek Elementary" width={44} height={44}
+              className="rounded-full transition-transform duration-300 group-hover:scale-105"
+              style={{ border: `2px solid ${C.gold}44` }} />
+          </div>
+          <div className="hidden sm:block">
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>Bessey Creek</p>
+            <p className="text-sm font-bold leading-tight" style={{ color: C.green, fontFamily: "'Playfair Display', Georgia, serif" }}>The Gator Grid</p>
+          </div>
+        </a>
+
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-1">
+          {NAV_LINKS.map((l) => (
+            <a key={l.label} href={l.href}
+              className="px-4 py-2 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-green-50"
+              style={{ color: C.muted, letterSpacing: "0.08em" }}
+              onMouseEnter={e => { (e.target as HTMLElement).style.color = C.green; }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.color = C.muted; }}>
+              {l.label}
+            </a>
+          ))}
+          <a href="#contact" className="ml-3 px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 hover:opacity-90"
+            style={{ background: C.green, color: "white", letterSpacing: "0.08em" }}>
+            Join PTA
+          </a>
+        </div>
+
+        {/* Mobile */}
+        <div className="md:hidden relative" ref={menuRef}>
+          <button onClick={() => setOpen(v => !v)} className="p-2 rounded-lg transition-colors hover:bg-green-50" aria-label="Menu">
+            {open ? <X className="w-5 h-5" style={{ color: C.green }} /> : <Menu className="w-5 h-5" style={{ color: C.green }} />}
+          </button>
+          {open && (
+            <div className="absolute right-0 top-14 w-56 rounded-2xl overflow-hidden z-50"
+              style={{ background: "white", border: `1px solid ${C.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
+              {NAV_LINKS.map((l) => (
+                <a key={l.label} href={l.href} onClick={() => setOpen(false)}
+                  className="flex items-center px-5 py-3.5 text-xs font-semibold uppercase tracking-wider transition-colors hover:bg-green-50"
+                  style={{ color: C.muted, borderBottom: `1px solid ${C.border}`, letterSpacing: "0.08em" }}>
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-      <h2 className="text-2xl font-bold tracking-tight" style={{ color: COLORS.green, fontFamily: "'Playfair Display', Georgia, serif" }}>
-        {children}
-      </h2>
-      <div className="flex-1 h-px ml-2" style={{ background: `linear-gradient(to right, ${COLORS.green}40, transparent)` }} />
-    </div>
+    </nav>
   );
 }
 
-function ProgressBar({ value, max, label, color = COLORS.green }: { value: number; max: number; label: string; color?: string }) {
-  const pct = Math.min(100, Math.round((value / max) * 100));
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center text-sm">
-        <span className="text-gray-500 font-medium">{label}</span>
-        <span className="font-bold tabular-nums" style={{ color }}>{pct}%</span>
-      </div>
-      <div className="h-3 rounded-full bg-gray-100 overflow-hidden border border-gray-200">
-        <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}99, ${color})`, boxShadow: `0 0 8px ${color}55` }} />
-      </div>
-    </div>
-  );
-}
-
+// ═════════════════════════════════════════════════════════════
+// HERO — Full-bleed vibrant green with radial glow
+// ═════════════════════════════════════════════════════════════
 function HeroSection() {
   return (
-    <section className="relative text-center py-16 px-4 overflow-hidden" style={{ background: "linear-gradient(160deg, #f0faf0 0%, #ffffff 60%, #f5faff 100%)", borderBottom: `3px solid ${COLORS.green}` }}>
-      <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full pointer-events-none" style={{ background: `${COLORS.green}10`, filter: "blur(48px)" }} />
-      <div className="absolute -bottom-12 -right-12 w-60 h-60 rounded-full pointer-events-none" style={{ background: `${COLORS.gold}18`, filter: "blur(40px)" }} />
-      <div className="relative z-10 max-w-3xl mx-auto">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6" style={{ border: `3px solid ${COLORS.green}`, background: "white", boxShadow: `0 4px 24px ${COLORS.green}33` }}>
-          <span className="text-4xl">🐊</span>
+    <section id="top" className="relative overflow-hidden" style={{ background: C.green, minHeight: 600 }}>
+      {/* Decorative background pattern */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 20% 50%, ${C.greenDark}66 0%, transparent 60%), radial-gradient(circle at 80% 20%, ${C.gold}22 0%, transparent 50%)`,
+        }} />
+        {/* Subtle grid */}
+        <div className="absolute inset-0" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+          backgroundSize: "64px 64px",
+        }} />
+        {/* Gold decorative lines */}
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(to right, transparent, ${C.gold}88, transparent)` }} />
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: `linear-gradient(to right, transparent, ${C.gold}66, transparent)` }} />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 flex flex-col items-center text-center">
+        {/* Eyebrow */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="h-px w-12" style={{ background: C.gold }} />
+          <p className="text-xs font-semibold tracking-[0.3em] uppercase" style={{ color: C.gold }}>
+            Bessey Creek Elementary · PTA
+          </p>
+          <div className="h-px w-12" style={{ background: C.gold }} />
         </div>
-        <h1 className="text-5xl sm:text-6xl font-black tracking-tight mb-3" style={{ fontFamily: "'Playfair Display', Georgia, serif", color: COLORS.green }}>
-          The{" "}
-          <span style={{ background: `linear-gradient(135deg, ${COLORS.gold}, ${COLORS.yellowShield})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            Gator Grid
+
+        {/* Logo with multi-ring shadow */}
+        <div className="relative mb-9">
+          <div className="absolute inset-0 rounded-full blur-2xl scale-110" style={{ background: `${C.gold}33` }} />
+          <Image src={LOGO_URL} alt="Bessey Creek Elementary School" width={150} height={150} priority
+            className="relative rounded-full"
+            style={{ 
+              border: `3px solid ${C.gold}88`, 
+              boxShadow: `0 0 0 10px ${C.gold}33, 0 0 0 20px ${C.gold}18, 0 20px 60px rgba(0,0,0,0.45)` 
+            }} />
+        </div>
+
+        {/* Title — editorial sizing */}
+        <h1 className="mb-5" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+          <span className="block text-xl font-normal tracking-[0.25em] uppercase mb-2" style={{ color: `${C.gold}` }}>
+            Welcome to
+          </span>
+          <span className="block font-black" style={{ 
+            color: "white", 
+            fontSize: "clamp(3rem, 7vw, 5.5rem)", 
+            lineHeight: 1.02, 
+            letterSpacing: "-0.025em" 
+          }}>
+            The Gator Grid
           </span>
         </h1>
-        <p className="text-base text-gray-500 font-semibold tracking-widest uppercase mb-2">Bessey Creek Elementary PTA</p>
-        <p className="text-gray-400 text-sm">Empowering students · Engaging community · Elevating excellence</p>
-        <div className="flex justify-center gap-2 mt-5">
-          {[COLORS.red, COLORS.blue, COLORS.yellowShield, COLORS.green].map((c) => (
-            <div key={c} className="w-3 h-3 rounded-full" style={{ background: c }} />
+
+        <p className="max-w-xl text-base leading-relaxed mb-12" style={{ color: "rgba(255,255,255,0.95)" }}>
+          Your hub for community progress, upcoming events, volunteer opportunities, and everything that makes Bessey Creek Elementary extraordinary.
+        </p>
+
+        {/* CTA buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
+          <a href="#volunteer" className="px-9 py-4 rounded-full text-sm font-bold tracking-wider uppercase transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+            style={{ 
+              background: `linear-gradient(135deg, ${C.gold}, #f0c75e)`, 
+              color: C.greenDark, 
+              letterSpacing: "0.1em", 
+              boxShadow: `0 6px 28px ${C.gold}66` 
+            }}>
+            Log Volunteer Hours
+          </a>
+          <a href="#events" className="px-9 py-4 rounded-full text-sm font-bold tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-green-900"
+            style={{ border: `1.5px solid ${C.gold}88`, color: "white", letterSpacing: "0.1em" }}>
+            View Events
+          </a>
+        </div>
+
+        {/* S.T.A.R. strip — horizontal layout */}
+        <div className="flex flex-wrap justify-center gap-8 sm:gap-14">
+          {["Stay Safe", "Take Responsibility", "Actively Learn", "Respect Others"].map((v) => (
+            <div key={v} className="flex items-center gap-2">
+              <span className="text-xl font-black" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>
+                {v[0]}
+              </span>
+              <span className="text-xs tracking-wide" style={{ color: "rgba(255,255,255,0.85)" }}>{v.slice(2)}</span>
+            </div>
           ))}
         </div>
       </div>
@@ -198,97 +357,209 @@ function HeroSection() {
   );
 }
 
+// ═════════════════════════════════════════════════════════════
+// SECTION WRAPPER
+// ═════════════════════════════════════════════════════════════
+function Section({ id, children, cream = false }: { id?: string; children: React.ReactNode; cream?: boolean }) {
+  return (
+    <section id={id} className="py-24 scroll-mt-20" style={{ background: cream ? C.cream : "white" }}>
+      <div className="max-w-7xl mx-auto px-6">{children}</div>
+    </section>
+  );
+}
+
+function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div className="text-center mb-16">
+      <p className="text-xs font-semibold tracking-[0.3em] uppercase mb-3" style={{ color: C.gold }}>
+        {eyebrow}
+      </p>
+      <h2 className="text-4xl md:text-5xl font-black" style={{ 
+        color: C.green, 
+        fontFamily: "'Playfair Display', Georgia, serif", 
+        letterSpacing: "-0.02em" 
+      }}>
+        {title}
+      </h2>
+      {diamondDivider}
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════
+// STAR VALUES — Vibrant green band
+// ═════════════════════════════════════════════════════════════
 function StarValuesSection() {
   return (
-    <section className="max-w-6xl mx-auto px-4 mb-16 mt-12">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {STAR_VALUES.map(({ icon: Icon, letter, label, accent, bg }) => (
-          <Card key={letter} className="p-5 group cursor-default relative overflow-hidden">
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" style={{ background: bg }} />
-            <div className="relative z-10 text-center space-y-2">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: `${accent}18`, border: `1.5px solid ${accent}44` }}>
-                <Icon className="w-5 h-5" style={{ color: accent }} />
+    <section className="py-12" style={{ 
+      background: C.green, 
+      borderTop: `2px solid ${C.gold}44`, 
+      borderBottom: `2px solid ${C.gold}44` 
+    }}>
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {STAR_VALUES.map(({ icon: Icon, letter, label, accent }) => (
+            <div key={letter} className="group flex items-center gap-4 p-6 rounded-2xl transition-all duration-300 cursor-default hover:scale-[1.02]"
+              style={{ background: `rgba(255,255,255,0.12)`, border: `1px solid ${C.gold}44` }}>
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${C.gold}33`, border: `1.5px solid ${C.gold}66` }}>
+                <span className="text-2xl font-black" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>{letter}</span>
               </div>
-              <div className="text-3xl font-black" style={{ color: accent, fontFamily: "'Playfair Display', serif" }}>{letter}</div>
-              <p className="text-xs text-gray-500 font-semibold leading-tight">{label}</p>
+              <div>
+                <p className="text-xs font-bold tracking-wider uppercase mb-0.5" style={{ color: C.gold }}>
+                  {label.split(" ")[0]}
+                </p>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>{label.split(" ").slice(1).join(" ")}</p>
+              </div>
             </div>
-          </Card>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════
+// DASHBOARD — Circular SVG progress rings
+// ═════════════════════════════════════════════════════════════
+function ProgressRing({ value, max, color, size = 140 }: { value: number; max: number; color: string; size?: number }) {
+  const pct = Math.min(100, (value / max) * 100);
+  const r = 45;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r={r} fill="none" stroke={`${color}22`} strokeWidth="7" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="7"
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+        transform="rotate(-90 50 50)" style={{ transition: "stroke-dasharray 1.2s ease" }} />
+      <text x="50" y="45" textAnchor="middle" fill={color} fontSize="18" fontWeight="900" fontFamily="Georgia, serif">
+        {Math.round(pct)}%
+      </text>
+      <text x="50" y="62" textAnchor="middle" fill={color} fontSize="7" fontFamily="sans-serif" opacity="0.7">
+        of goal
+      </text>
+    </svg>
   );
 }
 
 function DashboardSection({ data }: { data: DashboardData | null }) {
   const d = data ?? FALLBACK_DASHBOARD;
-  const fmt = (n: number) => (n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n}`);
+  const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n}`;
+
   return (
-    <section className="max-w-6xl mx-auto px-4 mb-16">
-      <SectionTitle icon={Trophy}>Gator Progress</SectionTitle>
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6 space-y-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-bold text-lg text-gray-800">Fundraising Goal</h3>
-              <p className="text-gray-400 text-sm mt-0.5">Help us reach our target!</p>
+    <Section id="progress" cream>
+      <SectionHeader eyebrow="Community Impact" title="Gator Progress" />
+      <div className="grid md:grid-cols-2 gap-10">
+        {/* Fundraising */}
+        <div className="rounded-3xl p-10 flex flex-col sm:flex-row items-center gap-10 transition-all duration-300 hover:shadow-2xl relative"
+          style={{ 
+            background: "white", 
+            border: `1px solid ${C.border}`, 
+            boxShadow: "0 10px 50px rgba(45,155,78,0.08)" 
+          }}>
+          <div className="h-2 w-full absolute top-0 left-0 rounded-t-3xl" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
+          <ProgressRing value={d.fundraisingCurrent} max={d.fundraisingGoal} color={C.gold} size={150} />
+          <div className="text-center sm:text-left">
+            <p className="text-xs font-semibold tracking-[0.24em] uppercase mb-2" style={{ color: C.gold }}>Fundraising</p>
+            <p className="text-5xl font-black mb-2" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
+              {fmt(d.fundraisingCurrent)}
+            </p>
+            <p className="text-sm mb-5" style={{ color: C.muted }}>raised of {fmt(d.fundraisingGoal)} goal</p>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.gold}22`, width: "100%", maxWidth: 200 }}>
+              <div className="h-full rounded-full transition-all duration-1000"
+                style={{ 
+                  width: `${Math.min(100, (d.fundraisingCurrent / d.fundraisingGoal) * 100)}%`, 
+                  background: `linear-gradient(90deg, ${C.gold}aa, ${C.gold})` 
+                }} />
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-black tabular-nums" style={{ color: COLORS.gold }}>{fmt(d.fundraisingCurrent)}</p>
-              <p className="text-gray-400 text-xs">of {fmt(d.fundraisingGoal)}</p>
-            </div>
+            <p className="text-xs mt-3" style={{ color: C.muted }}>{fmt(d.fundraisingGoal - d.fundraisingCurrent)} remaining</p>
           </div>
-          <ProgressBar value={d.fundraisingCurrent} max={d.fundraisingGoal} label="Raised so far" color={COLORS.gold} />
-          <p className="text-gray-400 text-xs text-right">{fmt(d.fundraisingGoal - d.fundraisingCurrent)} remaining</p>
-        </Card>
-        <Card className="p-6 space-y-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="font-bold text-lg text-gray-800">Volunteer Hours</h3>
-              <p className="text-gray-400 text-sm mt-0.5">Every hour makes a difference.</p>
+        </div>
+
+        {/* Volunteer Hours */}
+        <div className="rounded-3xl p-10 flex flex-col sm:flex-row items-center gap-10 transition-all duration-300 hover:shadow-2xl relative"
+          style={{ 
+            background: "white", 
+            border: `1px solid ${C.border}`, 
+            boxShadow: "0 10px 50px rgba(45,155,78,0.08)" 
+          }}>
+          <div className="h-2 w-full absolute top-0 left-0 rounded-t-3xl" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
+          <ProgressRing value={d.volunteerHoursCurrent} max={d.volunteerHoursGoal} color={C.green} size={150} />
+          <div className="text-center sm:text-left">
+            <p className="text-xs font-semibold tracking-[0.24em] uppercase mb-2" style={{ color: C.green }}>Volunteer Hours</p>
+            <p className="text-5xl font-black mb-2" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
+              {d.volunteerHoursCurrent}<span className="text-2xl font-medium" style={{ color: C.muted }}>h</span>
+            </p>
+            <p className="text-sm mb-5" style={{ color: C.muted }}>of {d.volunteerHoursGoal}h annual goal</p>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.green}22`, width: "100%", maxWidth: 200 }}>
+              <div className="h-full rounded-full transition-all duration-1000"
+                style={{ 
+                  width: `${Math.min(100, (d.volunteerHoursCurrent / d.volunteerHoursGoal) * 100)}%`, 
+                  background: `linear-gradient(90deg, ${C.greenDark}aa, ${C.green})` 
+                }} />
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-black tabular-nums" style={{ color: COLORS.green }}>
-                {d.volunteerHoursCurrent}<span className="text-base font-medium text-gray-400">h</span>
-              </p>
-              <p className="text-gray-400 text-xs">of {d.volunteerHoursGoal}h goal</p>
-            </div>
+            {d.nextEventName && <p className="text-xs mt-3" style={{ color: C.muted }}>Next: {d.nextEventName} · {d.nextEventDate}</p>}
           </div>
-          <ProgressBar value={d.volunteerHoursCurrent} max={d.volunteerHoursGoal} label="Hours logged" color={COLORS.green} />
-          {d.nextEventName && <p className="text-gray-400 text-xs text-right">Next: {d.nextEventName} · {d.nextEventDate}</p>}
-        </Card>
+        </div>
       </div>
-    </section>
+    </Section>
   );
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Community: COLORS.green,
-  Meeting: COLORS.blue,
-  Academic: "#7c3aed",
-  Fundraiser: COLORS.gold,
-  Spirit: COLORS.red,
+// ═════════════════════════════════════════════════════════════
+// EVENTS — Gradient timeline line with hover lift
+// ═════════════════════════════════════════════════════════════
+const CAT_COLORS: Record<string, string> = {
+  Community: C.green, Meeting: C.blue, Academic: "#7c3aed",
+  Fundraiser: C.gold, Spirit: C.red,
 };
 
-function EventCard({ event, index }: { event: SchoolEvent; index: number }) {
-  const accent = CATEGORY_COLORS[event.category] ?? COLORS.silver;
+function EventCard({ event, index, total }: { event: SchoolEvent; index: number; total: number }) {
+  const accent = CAT_COLORS[event.category] ?? C.silver;
   return (
-    <div className="flex gap-4 group">
-      <div className="flex flex-col items-center">
-        <div className="w-3 h-3 rounded-full mt-1.5 transition-transform group-hover:scale-125" style={{ background: accent, boxShadow: `0 0 0 3px ${accent}30` }} />
-        {index < 2 && <div className="flex-1 w-px bg-gray-200 mt-1" />}
+    <div className="flex gap-7 group">
+      {/* Timeline */}
+      <div className="flex flex-col items-center flex-shrink-0">
+        <div className="w-5 h-5 rounded-full mt-1 transition-all duration-300 group-hover:scale-125 group-hover:shadow-xl"
+          style={{ background: accent, boxShadow: `0 0 0 5px ${accent}22` }} />
+        {index < total - 1 && (
+          <div className="flex-1 w-0.5 mt-3" 
+            style={{ background: `linear-gradient(to bottom, ${accent}66, transparent)` }} />
+        )}
       </div>
-      <Card className="flex-1 p-5 mb-4 hover:translate-x-1 transition-transform duration-200">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <h3 className="text-gray-800 font-bold text-base">{event.title}</h3>
-          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}44` }}>{event.category}</span>
+
+      {/* Card */}
+      <div className="flex-1 pb-10 group">
+        <div className="rounded-2xl p-7 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+          style={{ 
+            background: "white", 
+            border: `1px solid ${C.border}`, 
+            boxShadow: "0 4px 20px rgba(0,0,0,0.05)" 
+          }}>
+          <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+            <h3 className="font-bold text-lg" style={{ color: C.ink, fontFamily: "Georgia, serif" }}>
+              {event.title}
+            </h3>
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0"
+              style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}44` }}>
+              {event.category}
+            </span>
+          </div>
+          <p className="text-sm leading-relaxed mb-5" style={{ color: C.muted }}>{event.description}</p>
+          <div className="flex flex-wrap gap-5 text-xs" style={{ color: C.muted }}>
+            <span className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4" style={{ color: accent }} />{event.date}
+            </span>
+            <span className="flex items-center gap-2">
+              <Clock className="w-4 h-4" style={{ color: accent }} />{event.time}
+            </span>
+            <span className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" style={{ color: accent }} />{event.location}
+            </span>
+          </div>
         </div>
-        <p className="text-gray-500 text-sm mt-2">{event.description}</p>
-        <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-400">
-          <span className="flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" /> {event.date}</span>
-          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {event.time}</span>
-          <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {event.location}</span>
-        </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -296,229 +567,514 @@ function EventCard({ event, index }: { event: SchoolEvent; index: number }) {
 function EventTimelineSection({ events }: { events: SchoolEvent[] | null }) {
   const list = events ?? FALLBACK_EVENTS;
   return (
-    <section className="max-w-6xl mx-auto px-4 mb-16">
-      <SectionTitle icon={CalendarDays}>Event Timeline</SectionTitle>
-      <div className="max-h-[520px] overflow-y-auto pr-2">
-        {list.length === 0 ? (
-          <Card className="p-8 text-center text-gray-400">No upcoming events found.</Card>
-        ) : (
-          list.map((e, i) => <EventCard key={e.id ?? i} event={e} index={i} />)
-        )}
+    <Section id="events">
+      <SectionHeader eyebrow="What's Coming Up" title="Event Timeline" />
+      <div className="max-w-3xl mx-auto max-h-[650px] overflow-y-auto pr-3">
+        {list.length === 0
+          ? <p className="text-center py-16" style={{ color: C.muted }}>No upcoming events found.</p>
+          : list.map((e, i) => <EventCard key={e.id ?? i} event={e} index={i} total={list.length} />)}
       </div>
-    </section>
+    </Section>
   );
 }
 
-const INITIAL_FORM: VolunteerFormData = { volunteerName: "", volunteerEmail: "", eventName: "", hoursLogged: "", notes: "" };
-
-function inputClass(hasError?: boolean) {
-  return ["w-full bg-gray-50 border rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400", "focus:outline-none focus:ring-2 transition-all duration-200", hasError ? "border-red-400 focus:ring-red-200" : "border-gray-200 focus:border-green-400 focus:ring-green-100"].join(" ");
-}
+// ═════════════════════════════════════════════════════════════
+// VOLUNTEER FORM — Gold accent bar, refined spacing
+// ═════════════════════════════════════════════════════════════
+const INIT_VOL: VolunteerFormData = { volunteerName: "", volunteerEmail: "", eventName: "", hoursLogged: "", notes: "" };
 
 function VolunteerFormSection() {
-  const [form, setForm] = useState<VolunteerFormData>(INITIAL_FORM);
+  const [form, setForm] = useState<VolunteerFormData>(INIT_VOL);
   const [status, setStatus] = useState<FormStatus>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [touched, setTouched] = useState<Partial<Record<keyof VolunteerFormData, boolean>>>({});
 
-  const set = (k: keyof VolunteerFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const touch = (k: keyof VolunteerFormData) => () => setTouched((t) => ({ ...t, [k]: true }));
+  const set = (k: keyof VolunteerFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+  const touch = (k: keyof VolunteerFormData) => () => setTouched(t => ({ ...t, [k]: true }));
 
   const errors = {
-    volunteerName: !form.volunteerName.trim() && "Name is required.",
+    volunteerName:  !form.volunteerName.trim() && "Name is required.",
     volunteerEmail: !isValidEmail(form.volunteerEmail) && "Valid email required.",
-    eventName: !form.eventName.trim() && "Event name is required.",
-    hoursLogged: (!form.hoursLogged || isNaN(Number(form.hoursLogged)) || Number(form.hoursLogged) <= 0 || Number(form.hoursLogged) > 24) && "Enter valid hours (0.5–24).",
+    eventName:      !form.eventName.trim() && "Event name is required.",
+    hoursLogged:    (!form.hoursLogged || isNaN(Number(form.hoursLogged)) || Number(form.hoursLogged) <= 0 || Number(form.hoursLogged) > 24) && "Enter hours (0.5–24).",
   };
-
   const isValid = !Object.values(errors).some(Boolean);
 
   const handleSubmit = useCallback(async () => {
     setTouched({ volunteerName: true, volunteerEmail: true, eventName: true, hoursLogged: true });
     if (!isValid) return;
-    if (!API_URL) { setErrorMsg("API URL is not configured."); setStatus("error"); return; }
-    const safeUrl = buildApiUrl(API_URL, "VolunteerLog");
-    if (!safeUrl) { setErrorMsg("Invalid API URL configuration."); setStatus("error"); return; }
     setStatus("loading");
     try {
-      const sanitized = {
-        volunteerName: sanitizeInput(form.volunteerName),
-        volunteerEmail: sanitizeInput(form.volunteerEmail),
-        eventName: sanitizeInput(form.eventName),
-        hoursLogged: String(parseFloat(form.hoursLogged)),
-        notes: sanitizeInput(form.notes),
+      await postToSheet({
         tab: "VolunteerLog",
-        timestamp: new Date().toISOString(),
-      };
-      const res = await fetch(safeUrl, { method: "POST", headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }, body: JSON.stringify(sanitized) });
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      setStatus("success");
-      setForm(INITIAL_FORM);
-      setTouched({});
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
-      setStatus("error");
-    }
+        volunteerName:  sanitizeInput(form.volunteerName),
+        volunteerEmail: sanitizeInput(form.volunteerEmail),
+        eventName:      sanitizeInput(form.eventName),
+        hoursLogged:    String(parseFloat(form.hoursLogged)),
+        notes:          sanitizeInput(form.notes),
+        timestamp:      new Date().toISOString(),
+      });
+      setStatus("success"); setForm(INIT_VOL); setTouched({});
+    } catch { setErrorMsg("Submission failed. Please try again."); setStatus("error"); }
   }, [form, isValid]);
 
   const reset = () => { setStatus("idle"); setErrorMsg(""); };
 
   return (
-    <section className="max-w-6xl mx-auto px-4 mb-16">
-      <SectionTitle icon={Users}>Log Volunteer Hours</SectionTitle>
-      <Card className="max-w-2xl mx-auto p-8 relative overflow-hidden">
-        {status === "success" && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl gap-4" style={{ background: "rgba(240,250,240,0.95)", backdropFilter: "blur(4px)" }}>
-            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "#e8f5e9", border: `2px solid ${COLORS.green}` }}>
-              <CheckCircle className="w-8 h-8" style={{ color: COLORS.green }} />
-            </div>
-            <h3 className="font-bold text-xl" style={{ color: COLORS.green }}>Hours Logged!</h3>
-            <p className="text-gray-500 text-sm text-center max-w-xs">Thank you for volunteering! Your contribution has been recorded.</p>
-            <button onClick={reset} className="mt-2 px-6 py-2.5 rounded-xl font-semibold text-sm text-white" style={{ background: COLORS.green }}>Log More Hours</button>
-          </div>
-        )}
-        <div className="space-y-5">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Full Name <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="Jane Gator" value={form.volunteerName} onChange={set("volunteerName")} onBlur={touch("volunteerName")} maxLength={100} autoComplete="name" className={inputClass(!!touched.volunteerName && !!errors.volunteerName)} />
-              {touched.volunteerName && errors.volunteerName && <p className="text-red-500 text-xs mt-1">{errors.volunteerName}</p>}
-            </div>
-            <div>
-              <label className="block text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Email <span className="text-red-500">*</span></label>
-              <input type="email" placeholder="jane@example.com" value={form.volunteerEmail} onChange={set("volunteerEmail")} onBlur={touch("volunteerEmail")} maxLength={254} autoComplete="email" className={inputClass(!!touched.volunteerEmail && !!errors.volunteerEmail)} />
-              {touched.volunteerEmail && errors.volunteerEmail && <p className="text-red-500 text-xs mt-1">{errors.volunteerEmail}</p>}
-            </div>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Event Name <span className="text-red-500">*</span></label>
-              <input type="text" placeholder="Spring Carnival" value={form.eventName} onChange={set("eventName")} onBlur={touch("eventName")} maxLength={150} className={inputClass(!!touched.eventName && !!errors.eventName)} />
-              {touched.eventName && errors.eventName && <p className="text-red-500 text-xs mt-1">{errors.eventName}</p>}
-            </div>
-            <div>
-              <label className="block text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Hours Logged <span className="text-red-500">*</span></label>
-              <input type="number" placeholder="2.5" min="0.5" max="24" step="0.5" value={form.hoursLogged} onChange={set("hoursLogged")} onBlur={touch("hoursLogged")} className={inputClass(!!touched.hoursLogged && !!errors.hoursLogged)} />
-              {touched.hoursLogged && errors.hoursLogged && <p className="text-red-500 text-xs mt-1">{errors.hoursLogged}</p>}
-            </div>
-          </div>
-          <div>
-            <label className="block text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5">Notes <span className="text-gray-400">(optional)</span></label>
-            <textarea rows={3} placeholder="What did you help with?" value={form.notes} onChange={set("notes")} maxLength={500} className={inputClass() + " resize-none"} />
-            <p className="text-right text-xs text-gray-300 mt-0.5">{form.notes.length}/500</p>
-          </div>
-          {status === "error" && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" /><span>{errorMsg}</span>
+    <Section id="volunteer" cream>
+      <SectionHeader eyebrow="Give Your Time" title="Log Volunteer Hours" />
+      <div className="max-w-2xl mx-auto">
+        <div className="rounded-3xl overflow-hidden relative"
+          style={{ 
+            background: "white", 
+            border: `1px solid ${C.border}`, 
+            boxShadow: "0 20px 70px rgba(45,155,78,0.12)" 
+          }}>
+          {/* Gold accent bar */}
+          <div className="h-2" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
+
+          {status === "success" && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 rounded-3xl"
+              style={{ background: "rgba(250,250,247,0.98)", backdropFilter: "blur(10px)" }}>
+              <div className="w-24 h-24 rounded-full flex items-center justify-center"
+                style={{ background: C.greenLight, border: `3px solid ${C.green}` }}>
+                <CheckCircle className="w-12 h-12" style={{ color: C.green }} />
+              </div>
+              <div className="text-center">
+                <h3 className="text-3xl font-black mb-2" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
+                  Hours Logged!
+                </h3>
+                <p className="text-sm" style={{ color: C.muted }}>Thank you — your hours have been recorded.</p>
+              </div>
+              <button onClick={reset} className="px-10 py-3.5 rounded-full text-sm font-bold tracking-wider uppercase text-white transition-all hover:opacity-90"
+                style={{ background: C.green, letterSpacing: "0.1em" }}>
+                Log More Hours
+              </button>
             </div>
           )}
-          <button
-            onClick={handleSubmit}
-            disabled={status === "loading"}
-            className={["w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-200 flex items-center justify-center gap-2", status === "loading" ? "opacity-50 cursor-not-allowed" : ""].join(" ")}
-            style={status === "loading" ? { background: "#ccc", color: "#666" } : { background: `linear-gradient(135deg, ${COLORS.green}, ${COLORS.greenMid})`, color: "white", boxShadow: `0 4px 20px ${COLORS.green}44` }}
-          >
-            {status === "loading" ? (<><Loader2 className="w-4 h-4 animate-spin" />Submitting…</>) : (<><Sparkles className="w-4 h-4" />Submit Volunteer Hours</>)}
-          </button>
+
+          <div className="p-10 space-y-6">
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                  Full Name <span style={{ color: C.red }}>*</span>
+                </label>
+                <input type="text" placeholder="Jane Gator" value={form.volunteerName} onChange={set("volunteerName")}
+                  onBlur={touch("volunteerName")} maxLength={100} autoComplete="name"
+                  className={inputCls(!!touched.volunteerName && !!errors.volunteerName)}
+                  style={{ borderColor: touched.volunteerName && errors.volunteerName ? "#f87171" : C.border }} />
+                {touched.volunteerName && errors.volunteerName && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.volunteerName}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                  Email <span style={{ color: C.red }}>*</span>
+                </label>
+                <input type="email" placeholder="jane@example.com" value={form.volunteerEmail} onChange={set("volunteerEmail")}
+                  onBlur={touch("volunteerEmail")} maxLength={254} autoComplete="email"
+                  className={inputCls(!!touched.volunteerEmail && !!errors.volunteerEmail)}
+                  style={{ borderColor: touched.volunteerEmail && errors.volunteerEmail ? "#f87171" : C.border }} />
+                {touched.volunteerEmail && errors.volunteerEmail && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.volunteerEmail}</p>}
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                  Event Name <span style={{ color: C.red }}>*</span>
+                </label>
+                <input type="text" placeholder="Spring Carnival" value={form.eventName} onChange={set("eventName")}
+                  onBlur={touch("eventName")} maxLength={150}
+                  className={inputCls(!!touched.eventName && !!errors.eventName)}
+                  style={{ borderColor: touched.eventName && errors.eventName ? "#f87171" : C.border }} />
+                {touched.eventName && errors.eventName && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.eventName}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                  Hours <span style={{ color: C.red }}>*</span>
+                </label>
+                <input type="number" placeholder="2.5" min="0.5" max="24" step="0.5" value={form.hoursLogged}
+                  onChange={set("hoursLogged")} onBlur={touch("hoursLogged")}
+                  className={inputCls(!!touched.hoursLogged && !!errors.hoursLogged)}
+                  style={{ borderColor: touched.hoursLogged && errors.hoursLogged ? "#f87171" : C.border }} />
+                {touched.hoursLogged && errors.hoursLogged && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.hoursLogged}</p>}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                Notes <span className="font-normal normal-case" style={{ color: C.silver }}>(optional)</span>
+              </label>
+              <textarea rows={4} placeholder="What did you help with?" value={form.notes} onChange={set("notes")}
+                maxLength={500} className={inputCls() + " resize-none"}
+                style={{ borderColor: C.border }} />
+              <p className="text-right text-xs mt-2" style={{ color: C.silver }}>{form.notes.length}/500</p>
+            </div>
+            {status === "error" && (
+              <div className="flex items-center gap-3 p-4 rounded-xl text-sm"
+                style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.red }}>
+                <AlertCircle className="w-5 h-5 flex-shrink-0" /><span>{errorMsg}</span>
+              </div>
+            )}
+            <button onClick={handleSubmit} disabled={status === "loading"}
+              className={["w-full py-4 rounded-xl text-sm font-bold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2",
+                status === "loading" ? "opacity-50 cursor-not-allowed" : "hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5"].join(" ")}
+              style={{
+                background: status === "loading" ? "#ccc" : `linear-gradient(135deg, ${C.green}, ${C.greenDark})`,
+                color: "white", letterSpacing: "0.12em",
+                boxShadow: status === "loading" ? "none" : `0 6px 32px ${C.green}66`,
+              }}>
+              {status === "loading"
+                ? <><Loader2 className="w-5 h-5 animate-spin" />Submitting…</>
+                : <><Sparkles className="w-5 h-5" />Submit Volunteer Hours</>}
+            </button>
+          </div>
         </div>
-      </Card>
-    </section>
+      </div>
+    </Section>
   );
 }
 
-const TIER_STYLES: Record<string, { label: string; color: string; size: string }> = {
-  Gold:      { label: "Gold Partner",     color: COLORS.gold,   size: "col-span-2 sm:col-span-1" },
-  Silver:    { label: "Silver Partner",   color: COLORS.silver, size: "" },
-  Bronze:    { label: "Bronze Partner",   color: "#cd7f32",     size: "" },
-  Community: { label: "Community Friend", color: COLORS.blue,   size: "" },
+// ═════════════════════════════════════════════════════════════
+// SPONSORS — Warm gold tint on gold-tier cards
+// ═════════════════════════════════════════════════════════════
+const TIER_META: Record<string, { label: string; color: string; rank: number }> = {
+  Gold:      { label: "Gold Partner",     color: C.gold,   rank: 1 },
+  Silver:    { label: "Silver Partner",   color: C.silver, rank: 2 },
+  Bronze:    { label: "Bronze Partner",   color: "#cd7f32", rank: 3 },
+  Community: { label: "Community Friend", color: C.blue,   rank: 4 },
 };
 
 function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
-  const tier = TIER_STYLES[sponsor.tier] ?? TIER_STYLES["Community"];
+  const tier = TIER_META[sponsor.tier] ?? TIER_META["Community"];
   const isGold = sponsor.tier === "Gold";
   return (
-    <Card gold={isGold} className={`p-5 group ${tier.size}`}>
-      <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 font-black text-lg" style={{ background: `${tier.color}18`, border: `1.5px solid ${tier.color}55`, color: tier.color, fontFamily: "'Playfair Display', serif" }}>
-          {sponsor.name[0]}
+    <div className="rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group"
+      style={{
+        background: isGold ? C.goldLight : "white",
+        border: `1px solid ${isGold ? C.gold + "88" : C.border}`,
+        boxShadow: isGold ? `0 6px 30px ${C.gold}44` : "0 4px 16px rgba(0,0,0,0.05)",
+      }}>
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden font-black text-xl"
+          style={{ background: `${tier.color}22`, border: `1.5px solid ${tier.color}66`, color: tier.color, fontFamily: "Georgia, serif" }}>
+          {sponsor.logoUrl
+            ? <Image src={sponsor.logoUrl} alt={sponsor.name} width={56} height={56} className="object-contain" />
+            : sponsor.name[0]}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-gray-800 font-bold text-sm leading-tight">{sponsor.name}</h3>
-            {isGold && <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />}
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-bold text-base leading-tight" style={{ color: C.ink }}>
+              {sponsor.name}
+            </h3>
+            {isGold && <Star className="w-4 h-4 flex-shrink-0" style={{ fill: C.gold, color: C.gold }} />}
           </div>
-          <p className="text-xs mt-0.5 font-semibold" style={{ color: tier.color }}>{tier.label}</p>
-          {sponsor.tagline && <p className="text-gray-400 text-xs mt-1.5 leading-relaxed">{sponsor.tagline}</p>}
+          <p className="text-xs font-semibold tracking-wide uppercase mb-2" style={{ color: tier.color }}>
+            {tier.label}
+          </p>
+          {sponsor.tagline && <p className="text-xs leading-relaxed mb-2" style={{ color: C.muted }}>{sponsor.tagline}</p>}
           {sponsor.website && (
-            <a href={sponsor.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs mt-2 transition-colors" style={{ color: tier.color }}>
+            <a href={sponsor.website} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs mt-2 font-semibold transition-opacity hover:opacity-70"
+              style={{ color: tier.color }}>
               Visit <ChevronRight className="w-3 h-3" />
             </a>
           )}
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
 function SponsorShowcaseSection({ sponsors }: { sponsors: Sponsor[] | null }) {
   const list = sponsors ?? FALLBACK_SPONSORS;
   return (
-    <section className="max-w-6xl mx-auto px-4 mb-16">
-      <SectionTitle icon={Star}>Our Partners</SectionTitle>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <Section id="sponsors" cream>
+      <SectionHeader eyebrow="Community Partners" title="Our Sponsors" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         {list.map((s, i) => <SponsorCard key={s.id ?? i} sponsor={s} />)}
       </div>
-      <p className="text-center text-gray-400 text-xs mt-6">
+      <p className="text-center text-sm" style={{ color: C.muted }}>
         Interested in becoming a partner?{" "}
-        <a href="mailto:pta@besseycreek.edu" className="underline underline-offset-2 transition-colors" style={{ color: COLORS.green }}>
-          Contact the PTA
+        <a href="#contact" className="font-semibold underline underline-offset-2" style={{ color: C.green }}>
+          Contact the PTA →
         </a>
       </p>
-    </section>
+    </Section>
   );
 }
 
+// ═════════════════════════════════════════════════════════════
+// CALENDAR
+// ═════════════════════════════════════════════════════════════
+function CalendarSection() {
+  return (
+    <Section id="calendar">
+      <SectionHeader eyebrow="Stay Organized" title="School Calendar" />
+      <div className="rounded-3xl overflow-hidden"
+        style={{ border: `1px solid ${C.border}`, boxShadow: "0 20px 70px rgba(45,155,78,0.10)" }}>
+        <div className="h-2" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
+        <iframe src={CALENDAR_URL} className="w-full" style={{ height: 560, border: 0, display: "block" }}
+          title="Bessey Creek Elementary School Calendar" loading="lazy" />
+      </div>
+    </Section>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════
+// CONTACT — Gold accent bar, refined spacing
+// ═════════════════════════════════════════════════════════════
+const INIT_CONTACT: ContactFormData = { contactName: "", contactEmail: "", subject: "", message: "" };
+
+function ContactSection() {
+  const [form, setForm] = useState<ContactFormData>(INIT_CONTACT);
+  const [status, setStatus] = useState<FormStatus>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [touched, setTouched] = useState<Partial<Record<keyof ContactFormData, boolean>>>({});
+
+  const set = (k: keyof ContactFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+  const touch = (k: keyof ContactFormData) => () => setTouched(t => ({ ...t, [k]: true }));
+
+  const errors = {
+    contactName:  !form.contactName.trim() && "Name is required.",
+    contactEmail: !isValidEmail(form.contactEmail) && "Valid email required.",
+    subject:      !form.subject.trim() && "Subject is required.",
+    message:      !form.message.trim() && "Message is required.",
+  };
+  const isValid = !Object.values(errors).some(Boolean);
+
+  const handleSubmit = useCallback(async () => {
+    setTouched({ contactName: true, contactEmail: true, subject: true, message: true });
+    if (!isValid) return;
+    setStatus("loading");
+    try {
+      await postToSheet({
+        tab: "ContactForm",
+        contactName:  sanitizeInput(form.contactName),
+        contactEmail: sanitizeInput(form.contactEmail),
+        subject:      sanitizeInput(form.subject),
+        message:      sanitizeInput(form.message),
+        timestamp:    new Date().toISOString(),
+      });
+      setStatus("success"); setForm(INIT_CONTACT); setTouched({});
+    } catch { setErrorMsg("Submission failed. Please try again."); setStatus("error"); }
+  }, [form, isValid]);
+
+  const reset = () => { setStatus("idle"); setErrorMsg(""); };
+
+  return (
+    <Section id="contact" cream>
+      <SectionHeader eyebrow="Get Involved" title="Contact the PTA" />
+      <div className="grid md:grid-cols-5 gap-10 max-w-5xl mx-auto">
+        {/* Info */}
+        <div className="md:col-span-2 space-y-6">
+          <div className="rounded-2xl p-7" style={{ background: C.green }}>
+            <p className="text-xs font-semibold tracking-[0.24em] uppercase mb-6" style={{ color: C.gold }}>
+              Reach Us
+            </p>
+            {[
+              { icon: Mail,  text: "pta@besseycreek.edu", href: "mailto:pta@besseycreek.edu" },
+              { icon: Phone, text: "(772) 545-0350",       href: "tel:7725450350" },
+              { icon: MapPin,text: "2000 SW Bessey Creek Rd, Palm City, FL", href: undefined },
+            ].map(({ icon: Icon, text, href }) => (
+              <div key={text} className="flex items-start gap-4 mb-5 last:mb-0">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                  style={{ background: `${C.gold}33`, border: `1px solid ${C.gold}55` }}>
+                  <Icon className="w-4 h-4" style={{ color: C.gold }} />
+                </div>
+                {href
+                  ? <a href={href} className="text-sm hover:opacity-80 transition-opacity" style={{ color: "rgba(255,255,255,0.95)" }}>{text}</a>
+                  : <span className="text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>{text}</span>}
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl p-7" style={{ background: C.greenLight, border: `1px solid ${C.border}` }}>
+            <p className="text-xs font-semibold tracking-[0.24em] uppercase mb-5" style={{ color: C.green }}>Follow Us</p>
+            <div className="flex gap-4">
+              {[
+                { icon: Facebook,  label: "Facebook",  href: "https://www.facebook.com/BesseyCreekElementary" },
+                { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/" },
+                { icon: Youtube,   label: "YouTube",   href: "https://www.youtube.com/" },
+              ].map(({ icon: Icon, label, href }) => (
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg"
+                  style={{ background: "white", border: `1px solid ${C.border}` }}>
+                  <Icon className="w-5 h-5" style={{ color: C.green }} />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="md:col-span-3">
+          <div className="rounded-3xl overflow-hidden relative"
+            style={{ 
+              background: "white", 
+              border: `1px solid ${C.border}`, 
+              boxShadow: "0 20px 70px rgba(45,155,78,0.12)" 
+            }}>
+            <div className="h-2" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
+
+            {status === "success" && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 rounded-3xl"
+                style={{ background: "rgba(250,250,247,0.98)", backdropFilter: "blur(10px)" }}>
+                <div className="w-24 h-24 rounded-full flex items-center justify-center"
+                  style={{ background: C.greenLight, border: `3px solid ${C.green}` }}>
+                  <CheckCircle className="w-12 h-12" style={{ color: C.green }} />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-3xl font-black mb-2" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
+                    Message Sent!
+                  </h3>
+                  <p className="text-sm" style={{ color: C.muted }}>We&apos;ll get back to you soon.</p>
+                </div>
+                <button onClick={reset} className="px-10 py-3.5 rounded-full text-sm font-bold tracking-wider uppercase text-white hover:opacity-90"
+                  style={{ background: C.green, letterSpacing: "0.1em" }}>Send Another</button>
+              </div>
+            )}
+
+            <div className="p-10 space-y-6">
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                    Name <span style={{ color: C.red }}>*</span>
+                  </label>
+                  <input type="text" placeholder="Your name" value={form.contactName} onChange={set("contactName")}
+                    onBlur={touch("contactName")} maxLength={100}
+                    className={inputCls(!!touched.contactName && !!errors.contactName)}
+                    style={{ borderColor: touched.contactName && errors.contactName ? "#f87171" : C.border }} />
+                  {touched.contactName && errors.contactName && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.contactName}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                    Email <span style={{ color: C.red }}>*</span>
+                  </label>
+                  <input type="email" placeholder="your@email.com" value={form.contactEmail} onChange={set("contactEmail")}
+                    onBlur={touch("contactEmail")} maxLength={254}
+                    className={inputCls(!!touched.contactEmail && !!errors.contactEmail)}
+                    style={{ borderColor: touched.contactEmail && errors.contactEmail ? "#f87171" : C.border }} />
+                  {touched.contactEmail && errors.contactEmail && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.contactEmail}</p>}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                  Subject <span style={{ color: C.red }}>*</span>
+                </label>
+                <input type="text" placeholder="How can we help?" value={form.subject} onChange={set("subject")}
+                  onBlur={touch("subject")} maxLength={200}
+                  className={inputCls(!!touched.subject && !!errors.subject)}
+                  style={{ borderColor: touched.subject && errors.subject ? "#f87171" : C.border }} />
+                {touched.subject && errors.subject && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.subject}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                  Message <span style={{ color: C.red }}>*</span>
+                </label>
+                <textarea rows={5} placeholder="Your message…" value={form.message} onChange={set("message")}
+                  onBlur={touch("message")} maxLength={500}
+                  className={inputCls(!!touched.message && !!errors.message) + " resize-none"}
+                  style={{ borderColor: touched.message && errors.message ? "#f87171" : C.border }} />
+                {touched.message && errors.message && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.message}</p>}
+              </div>
+              {status === "error" && (
+                <div className="flex items-center gap-3 p-4 rounded-xl text-sm"
+                  style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.red }}>
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" /><span>{errorMsg}</span>
+                </div>
+              )}
+              <button onClick={handleSubmit} disabled={status === "loading"}
+                className={["w-full py-4 rounded-xl text-sm font-bold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2",
+                  status === "loading" ? "opacity-50 cursor-not-allowed" : "hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5"].join(" ")}
+                style={{
+                  background: status === "loading" ? "#ccc" : `linear-gradient(135deg, ${C.green}, ${C.greenDark})`,
+                  color: "white", letterSpacing: "0.12em",
+                  boxShadow: status === "loading" ? "none" : `0 6px 32px ${C.green}66`,
+                }}>
+                {status === "loading"
+                  ? <><Loader2 className="w-5 h-5 animate-spin" />Sending…</>
+                  : <><Mail className="w-5 h-5" />Send Message</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════
+// FOOTER — Full vibrant green with centered editorial layout
+// ═════════════════════════════════════════════════════════════
 function Footer() {
   return (
-    <footer className="mt-8 py-8 text-center text-xs space-y-1" style={{ borderTop: `3px solid ${COLORS.green}`, background: "#f0faf0" }}>
-      <p className="font-bold text-sm" style={{ color: COLORS.green }}>🐊 The Gator Grid</p>
-      <p className="text-gray-500">Bessey Creek Elementary PTA · Stay Safe · Take Responsibility · Actively Learn · Respect Others</p>
-      <p className="text-gray-400 mt-2">© {new Date().getFullYear()} Bessey Creek Elementary PTA. All rights reserved.</p>
+    <footer style={{ background: C.green, borderTop: `2px solid ${C.gold}66` }}>
+      <div className="max-w-7xl mx-auto px-6 py-20">
+        <div className="flex flex-col items-center text-center">
+          <Image src={LOGO_URL} alt="Bessey Creek Elementary" width={80} height={80} className="rounded-full mb-6"
+            style={{ border: `3px solid ${C.gold}66`, opacity: 0.95 }} />
+          <p className="text-xs font-semibold tracking-[0.3em] uppercase mb-2" style={{ color: C.gold }}>
+            Bessey Creek Elementary
+          </p>
+          <p className="text-3xl font-black mb-8" style={{ color: "white", fontFamily: "'Playfair Display', Georgia, serif" }}>
+            The Gator Grid
+          </p>
+          {/* Divider */}
+          <div className="flex items-center gap-5 mb-8 w-full max-w-md">
+            <div className="flex-1 h-px" style={{ background: `${C.gold}55` }} />
+            <div className="w-2 h-2 rotate-45" style={{ background: `${C.gold}88` }} />
+            <div className="flex-1 h-px" style={{ background: `${C.gold}55` }} />
+          </div>
+          <p className="text-xs tracking-widest mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>
+            STAY SAFE · TAKE RESPONSIBILITY · ACTIVELY LEARN · RESPECT OTHERS
+          </p>
+          <p className="text-xs mt-6" style={{ color: "rgba(255,255,255,0.55)" }}>
+            © {new Date().getFullYear()} Bessey Creek Elementary PTA · All rights reserved
+          </p>
+        </div>
+      </div>
     </footer>
   );
 }
 
+// ═════════════════════════════════════════════════════════════
+// ROOT PAGE
+// ═════════════════════════════════════════════════════════════
 export default function GatorGridPage() {
-  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-  const [events, setEvents] = useState<SchoolEvent[] | null>(null);
-  const [sponsors, setSponsors] = useState<Sponsor[] | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [dashboard,     setDashboard]     = useState<DashboardData  | null>(null);
+  const [events,        setEvents]        = useState<SchoolEvent[]  | null>(null);
+  const [sponsors,      setSponsors]      = useState<Sponsor[]      | null>(null);
+  const [announcements, setAnnouncements] = useState<Announcement[] | null>(null);
+  const [mounted,       setMounted]       = useState(false);
 
   useEffect(() => {
     setMounted(true);
     Promise.all([
-      fetchSheet<DashboardData>("Dashboard", FALLBACK_DASHBOARD).then(setDashboard),
-      fetchSheet<SchoolEvent[]>("Events", FALLBACK_EVENTS).then(setEvents),
-      fetchSheet<Sponsor[]>("Sponsors", FALLBACK_SPONSORS).then(setSponsors),
+      fetchTab<DashboardData>  ("Dashboard",     FALLBACK_DASHBOARD).then(setDashboard),
+      fetchTab<SchoolEvent[]>  ("Events",        FALLBACK_EVENTS).then(setEvents),
+      fetchTab<Sponsor[]>      ("Sponsors",      FALLBACK_SPONSORS).then(setSponsors),
+      fetchTab<Announcement[]> ("Announcements", FALLBACK_ANNOUNCEMENTS).then(setAnnouncements),
     ]);
   }, []);
 
-  const dashData = mounted ? dashboard : FALLBACK_DASHBOARD;
-  const eventsData = mounted ? events : FALLBACK_EVENTS;
-  const sponsorsData = mounted ? sponsors : FALLBACK_SPONSORS;
+  const dashData = mounted ? dashboard     : FALLBACK_DASHBOARD;
+  const evData   = mounted ? events        : FALLBACK_EVENTS;
+  const spData   = mounted ? sponsors      : FALLBACK_SPONSORS;
+  const annData  = mounted ? (announcements ?? FALLBACK_ANNOUNCEMENTS) : FALLBACK_ANNOUNCEMENTS;
 
   return (
-    <div className="min-h-screen text-gray-800 bg-white">
-      <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(0,100,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,100,0,0.03) 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
-      <div className="relative z-10">
-        <HeroSection />
-        <StarValuesSection />
-        <DashboardSection data={dashData} />
-        <EventTimelineSection events={eventsData} />
-        <VolunteerFormSection />
-        <SponsorShowcaseSection sponsors={sponsorsData} />
-        <Footer />
-      </div>
+    <div className="min-h-screen" style={{ background: "white", fontFamily: "'Lato', sans-serif" }}>
+      <AnnouncementBanner announcements={annData} />
+      <Navbar />
+      <HeroSection />
+      <StarValuesSection />
+      <DashboardSection data={dashData} />
+      <EventTimelineSection events={evData} />
+      <VolunteerFormSection />
+      <SponsorShowcaseSection sponsors={spData} />
+      <CalendarSection />
+      <ContactSection />
+      <Footer />
     </div>
   );
 }
