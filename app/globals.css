@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts ────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
+/* ── CSS Variables ───────────────────────────────────────── */
+:root {
+  --forest: #006400;
+  --forest-dark: #021402;
+  --gold: #FFD700;
+  --gold-muted: rgba(255, 215, 0, 0.15);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.10);
+}
+
+/* ── Base Reset ──────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: #021402;
+  background-image: radial-gradient(
+    ellipse at 20% 0%,
+    #0a3d0a 0%,
+    #021402 50%,
+    #000d00 100%
+  );
+  min-height: 100dvh;
+  color: white;
+  margin: 0;
+}
+
+/* ── Custom Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+/* ── Glassmorphism Utility ───────────────────────────────── */
+@layer components {
+  .glass {
+    @apply backdrop-blur-md border border-white/10;
+    background: var(--glass-bg);
+  }
+
+  .glass-gold {
+    @apply backdrop-blur-md border border-yellow-400/60;
+    background: rgba(255, 215, 0, 0.08);
+    box-shadow: 0 0 24px rgba(255, 215, 0, 0.15);
+  }
+
+  .gator-btn-primary {
+    @apply font-bold tracking-wide rounded-xl transition-all duration-200;
+    background: linear-gradient(135deg, #fde047, #eab308);
+    color: #14280a;
+    box-shadow: 0 4px 24px rgba(255, 215, 0, 0.28);
+  }
+
+  .gator-btn-primary:hover {
+    box-shadow: 0 4px 32px rgba(255, 215, 0, 0.48);
+    transform: translateY(-1px);
+  }
+
+  .gator-btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .gator-btn-primary:disabled {
+    @apply opacity-40 cursor-not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* ── Grid Texture Overlay ────────────────────────────────── */
+.grid-texture {
+  background-image:
+    linear-gradient(rgba(255, 215, 0, 0.8) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 215, 0, 0.8) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.025;
+}
+
+/* ── Focus Ring (Accessibility) ──────────────────────────── */
+:focus-visible {
+  outline: 2px solid rgba(255, 215, 0, 0.7);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Input autofill override ─────────────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset !important;
+  -webkit-text-fill-color: white !important;
+  caret-color: white;
+}
+
+/* ── Selection ───────────────────────────────────────────── */
+::selection {
+  background: rgba(255, 215, 0, 0.3);
+  color: white;
+}
+
+/* ── Reduced Motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
