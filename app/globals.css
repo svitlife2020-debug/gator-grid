@@ -10,8 +10,10 @@
   --forest: #006400;
   --forest-mid: #2d9e2d;
   --gold: #F5C400;
+  --gold-shield: #e6b800;
   --red: #c0392b;
   --blue: #1a6faf;
+  --silver: #8e9eab;
 }
 
 /* ── Base Reset ──────────────────────────────────────────── */
@@ -51,6 +53,68 @@ body {
   background: #006400;
 }
 
+/* ── Component Utilities ─────────────────────────────────── */
+@layer components {
+  .gator-card {
+    @apply rounded-2xl border border-gray-200 bg-white transition-all duration-300;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .gator-card:hover {
+    @apply border-green-300;
+    box-shadow: 0 4px 24px rgba(0, 100, 0, 0.12);
+  }
+
+  .gator-card-gold {
+    @apply rounded-2xl border border-yellow-300 bg-yellow-50 transition-all duration-300;
+    box-shadow: 0 4px 20px rgba(245, 196, 0, 0.25);
+  }
+
+  .gator-btn-primary {
+    @apply font-bold tracking-wide rounded-xl transition-all duration-200 text-white;
+    background: linear-gradient(135deg, #006400, #2d9e2d);
+    box-shadow: 0 4px 20px rgba(0, 100, 0, 0.3);
+  }
+
+  .gator-btn-primary:hover {
+    box-shadow: 0 4px 28px rgba(0, 100, 0, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .gator-btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .gator-btn-primary:disabled {
+    @apply opacity-40 cursor-not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .gator-section-title {
+    @apply text-2xl font-bold tracking-tight;
+    color: var(--forest);
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .gator-input {
+    @apply w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400;
+    @apply focus:outline-none focus:ring-2 focus:border-green-400 focus:ring-green-100 transition-all duration-200;
+  }
+
+  .gator-input-error {
+    @apply border-red-400 focus:ring-red-200;
+  }
+}
+
+/* ── Grid Texture Overlay ────────────────────────────────── */
+.grid-texture {
+  background-image:
+    linear-gradient(rgba(0, 100, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 100, 0, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
 /* ── Focus Ring (Accessibility) ──────────────────────────── */
 :focus-visible {
   outline: 2px solid #006400;
@@ -69,123 +133,8 @@ input:-webkit-autofill:focus {
 
 /* ── Selection ───────────────────────────────────────────── */
 ::selection {
-  background: rgba(0, 100, 0, 0.15);
+  background: rgba(0, 100, 0, 0.12);
   color: #006400;
-}
-
-/* ── Reduced Motion ──────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    #021402 50%,
-    #000d00 100%
-  );
-  min-height: 100dvh;
-  color: white;
-  margin: 0;
-}
-
-/* ── Custom Scrollbar ────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 99px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 215, 0, 0.3);
-}
-
-/* ── Glassmorphism Utility ───────────────────────────────── */
-@layer components {
-  .glass {
-    @apply backdrop-blur-md border border-white/10;
-    background: var(--glass-bg);
-  }
-
-  .glass-gold {
-    @apply backdrop-blur-md border border-yellow-400/60;
-    background: rgba(255, 215, 0, 0.08);
-    box-shadow: 0 0 24px rgba(255, 215, 0, 0.15);
-  }
-
-  .gator-btn-primary {
-    @apply font-bold tracking-wide rounded-xl transition-all duration-200;
-    background: linear-gradient(135deg, #fde047, #eab308);
-    color: #14280a;
-    box-shadow: 0 4px 24px rgba(255, 215, 0, 0.28);
-  }
-
-  .gator-btn-primary:hover {
-    box-shadow: 0 4px 32px rgba(255, 215, 0, 0.48);
-    transform: translateY(-1px);
-  }
-
-  .gator-btn-primary:active {
-    transform: translateY(0);
-  }
-
-  .gator-btn-primary:disabled {
-    @apply opacity-40 cursor-not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-}
-
-/* ── Grid Texture Overlay ────────────────────────────────── */
-.grid-texture {
-  background-image:
-    linear-gradient(rgba(255, 215, 0, 0.8) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 215, 0, 0.8) 1px, transparent 1px);
-  background-size: 48px 48px;
-  opacity: 0.025;
-}
-
-/* ── Focus Ring (Accessibility) ──────────────────────────── */
-:focus-visible {
-  outline: 2px solid rgba(255, 215, 0, 0.7);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* ── Input autofill override ─────────────────────────────── */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset !important;
-  -webkit-text-fill-color: white !important;
-  caret-color: white;
-}
-
-/* ── Selection ───────────────────────────────────────────── */
-::selection {
-  background: rgba(255, 215, 0, 0.3);
-  color: white;
 }
 
 /* ── Reduced Motion ──────────────────────────────────────── */
