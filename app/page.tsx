@@ -385,7 +385,7 @@ function EventCard({ event, index }: { event: SchoolEvent; index: number }) {
       <div className="flex flex-col items-center">
         <div
           className="w-3 h-3 rounded-full mt-1.5 ring-2 ring-offset-2 ring-offset-transparent transition-transform group-hover:scale-125"
-          style={{ background: accent, ringColor: `${accent}44` }}
+          style={{ background: accent, boxShadow: `0 0 0 2px ${accent}44` }}
         />
         {index < 2 && <div className="flex-1 w-px bg-white/10 mt-1" />}
       </div>
