@@ -6,6 +6,7 @@ import {
   CalendarDays, Trophy, Heart, Star, Shield, BookOpen, Users,
   CheckCircle, Clock, MapPin, Loader2, AlertCircle, ChevronRight,
   Sparkles, X, Menu, Bell, Mail, Phone, Facebook, Instagram, Youtube,
+  Globe,
 } from "lucide-react";
 
 // ═════════════════════════════════════════════════════════════
@@ -53,16 +54,17 @@ const API_URL = "https://script.google.com/macros/s/AKfycbz4lb3YslgAVDobLHrha7Rg
 const LOGO_URL = "https://cmsv2-assets.apptegy.net/uploads/7712/logo/8923/Martin_County_Bessey_Creek_Circle_Crest_Logo__2_.png";
 const CALENDAR_URL = "https://www.martinschools.org/o/bces/events?view=cal-month";
 
-// Logo-matched palette — vibrant green from school crest
+// Logo-matched palette — softer green background
 const C = {
   green:      "#2D9B4E",   // vibrant green from logo
   greenDark:  "#1e7039",   // darker shade for depth
-  greenLight: "#e8f5ec",   // light green tint
+  greenBg:    "#e8f5ec",   // soft green background (easier on eyes)
+  greenLight: "#f0f9f3",   // very light green
   gold:       "#D4AF37",   // rich gold
   goldLight:  "#f5edd6",
   cream:      "#fafaf7",   // warm off-white
   ink:        "#1a1f1a",   // near-black text
-  muted:      "#6b7a6b",   // muted green-gray
+  muted:      "#5a6b5a",   // muted green-gray (darker for better readability)
   border:     "#d4e0d4",
   red:        "#c0392b",   // from logo shield
   blue:       "#2874A6",   // from logo shield
@@ -89,25 +91,26 @@ const STAR_VALUES = [
 // FALLBACK DATA
 // ═════════════════════════════════════════════════════════════
 const FALLBACK_DASHBOARD: DashboardData = {
-  fundraisingGoal: 10000, fundraisingCurrent: 6800,
-  volunteerHoursGoal: 500, volunteerHoursCurrent: 312,
-  nextEventName: "Spring Carnival", nextEventDate: "May 17, 2025",
+  fundraisingGoal: 25000, fundraisingCurrent: 18500,
+  volunteerHoursGoal: 1000, volunteerHoursCurrent: 742,
+  nextEventName: "Spring Book Fair", nextEventDate: "April 15, 2025",
 };
 const FALLBACK_EVENTS: SchoolEvent[] = [
-  { id: "1", title: "Spring Carnival", date: "May 17, 2025", time: "10:00 AM – 3:00 PM", location: "School Grounds", description: "Annual spring carnival with games, food, and fun for the whole family!", category: "Community" },
-  { id: "2", title: "PTA Meeting", date: "April 8, 2025", time: "6:30 PM", location: "Media Center", description: "Monthly PTA meeting open to all parents and guardians.", category: "Meeting" },
-  { id: "3", title: "Science Night", date: "April 24, 2025", time: "5:00 PM – 7:00 PM", location: "Gymnasium", description: "Celebrate STEM with student-led science projects and demonstrations.", category: "Academic" },
+  { id: "1", title: "Spring Book Fair", date: "April 15, 2025", time: "9:00 AM – 4:00 PM", location: "Media Center", description: "Browse and purchase books to support our school library. All purchases benefit BCE students!", category: "Fundraiser" },
+  { id: "2", title: "PTA General Meeting", date: "April 22, 2025", time: "6:30 PM", location: "Cafeteria", description: "Monthly PTA meeting open to all parents, guardians, and community members. Join us to discuss upcoming events and school initiatives.", category: "Meeting" },
+  { id: "3", title: "STEM Fair", date: "May 6, 2025", time: "5:30 PM – 7:30 PM", location: "Gymnasium", description: "Celebrate science, technology, engineering, and math with hands-on activities and student project demonstrations.", category: "Academic" },
+  { id: "4", title: "Field Day", date: "May 20, 2025", time: "8:30 AM – 2:00 PM", location: "Athletic Fields", description: "Annual field day with games, relay races, and outdoor activities for all grade levels. Volunteers needed!", category: "Community" },
 ];
 const FALLBACK_SPONSORS: Sponsor[] = [
-  { id: "1", name: "Gator Grille",        tier: "Gold",      tagline: "Fueling Gator Pride since 2018" },
-  { id: "2", name: "CreekSide Dental",    tier: "Gold",      tagline: "Healthy smiles, bright futures" },
-  { id: "3", name: "Bessey Builders",     tier: "Silver",    tagline: "Building community together" },
-  { id: "4", name: "Palm City Realty",    tier: "Silver",    tagline: "Your local neighborhood experts" },
-  { id: "5", name: "Sunrise Bakery",      tier: "Bronze",    tagline: "Sweet treats for sweet students" },
-  { id: "6", name: "First Coast Finance", tier: "Community", tagline: "Investing in tomorrow" },
+  { id: "1", name: "Gator Grille & Sports Bar",   tier: "Gold",      tagline: "Fueling Gator Pride since 2010" },
+  { id: "2", name: "Treasure Coast Pediatrics",   tier: "Gold",      tagline: "Caring for our community's children" },
+  { id: "3", name: "Palm City Insurance Group",   tier: "Silver",    tagline: "Protecting families, supporting schools" },
+  { id: "4", name: "Martin County Credit Union",  tier: "Silver",    tagline: "Your local financial partner" },
+  { id: "5", name: "Bessey Creek Dental Care",    tier: "Bronze",    tagline: "Healthy smiles for Gator families" },
+  { id: "6", name: "First Bank of Florida",       tier: "Community", tagline: "Investing in tomorrow's leaders" },
 ];
 const FALLBACK_ANNOUNCEMENTS: Announcement[] = [
-  { id: "1", message: "🎉 Spring Carnival tickets now on sale — get yours before they sell out.", type: "success" },
+  { id: "1", message: "🎉 Spring Book Fair starts April 15th — support our students and win prizes!", type: "success" },
 ];
 
 // ═════════════════════════════════════════════════════════════
@@ -148,7 +151,7 @@ const diamondDivider = (
 
 function inputCls(hasError?: boolean) {
   return [
-    "w-full rounded-xl px-4 py-3.5 text-sm transition-all duration-200 outline-none",
+    "w-full rounded-xl px-4 py-3.5 text-base font-medium transition-all duration-200 outline-none",
     "border focus:ring-2",
     hasError
       ? "border-red-400 bg-red-50 focus:ring-red-100"
@@ -168,14 +171,14 @@ function AnnouncementBanner({ announcements }: { announcements: Announcement[] }
     <div className="w-full px-6 py-3 flex items-center justify-between gap-4"
       style={{ background: C.green, borderBottom: `2px solid ${C.gold}` }}>
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <Bell className="w-3.5 h-3.5 flex-shrink-0" style={{ color: C.gold }} />
-        <p className="text-xs font-medium tracking-wide truncate" style={{ color: "white" }}>
+        <Bell className="w-4 h-4 flex-shrink-0" style={{ color: C.gold }} />
+        <p className="text-sm font-semibold tracking-wide truncate" style={{ color: "white" }}>
           {ann.message}
         </p>
       </div>
       <button onClick={() => setDismissed(d => new Set([...d, ann.id]))}
         className="flex-shrink-0 p-1 rounded hover:opacity-70 transition-opacity" aria-label="Dismiss">
-        <X className="w-3.5 h-3.5" style={{ color: C.gold }} />
+        <X className="w-4 h-4" style={{ color: C.gold }} />
       </button>
     </div>
   );
@@ -209,17 +212,17 @@ function Navbar() {
         boxShadow: scrolled ? "0 4px 32px rgba(45,155,78,0.08)" : "none",
         backdropFilter: scrolled ? "blur(12px)" : "none",
       }}>
-      <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between gap-6" style={{ height: 68 }}>
+      <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between gap-6" style={{ height: 72 }}>
         {/* Brand */}
         <a href="#top" className="flex items-center gap-3 flex-shrink-0 group">
           <div className="relative">
-            <Image src={LOGO_URL} alt="Bessey Creek Elementary" width={44} height={44}
+            <Image src={LOGO_URL} alt="Bessey Creek Elementary" width={48} height={48}
               className="rounded-full transition-transform duration-300 group-hover:scale-105"
               style={{ border: `2px solid ${C.gold}44` }} />
           </div>
           <div className="hidden sm:block">
-            <p className="text-xs font-semibold tracking-[0.2em] uppercase" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>Bessey Creek</p>
-            <p className="text-sm font-bold leading-tight" style={{ color: C.green, fontFamily: "'Playfair Display', Georgia, serif" }}>The Gator Grid</p>
+            <p className="text-xs font-bold tracking-[0.2em] uppercase" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>Bessey Creek</p>
+            <p className="text-base font-black leading-tight" style={{ color: C.green, fontFamily: "'Playfair Display', Georgia, serif" }}>The Gator Grid</p>
           </div>
         </a>
 
@@ -227,34 +230,39 @@ function Navbar() {
         <div className="hidden md:flex items-center gap-1">
           {NAV_LINKS.map((l) => (
             <a key={l.label} href={l.href}
-              className="px-4 py-2 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-green-50"
+              className="px-4 py-2 rounded-lg text-sm font-bold tracking-wider uppercase transition-all duration-200 hover:bg-green-50"
               style={{ color: C.muted, letterSpacing: "0.08em" }}
               onMouseEnter={e => { (e.target as HTMLElement).style.color = C.green; }}
               onMouseLeave={e => { (e.target as HTMLElement).style.color = C.muted; }}>
               {l.label}
             </a>
           ))}
-          <a href="#contact" className="ml-3 px-5 py-2.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 hover:opacity-90"
+          <a href="https://bceptafl.givebacks.com/shop" target="_blank" rel="noopener noreferrer" className="ml-3 px-6 py-3 rounded-full text-sm font-black tracking-wider uppercase transition-all duration-200 hover:opacity-90"
             style={{ background: C.green, color: "white", letterSpacing: "0.08em" }}>
-            Join PTA
+            PTA Shop
           </a>
         </div>
 
         {/* Mobile */}
         <div className="md:hidden relative" ref={menuRef}>
           <button onClick={() => setOpen(v => !v)} className="p-2 rounded-lg transition-colors hover:bg-green-50" aria-label="Menu">
-            {open ? <X className="w-5 h-5" style={{ color: C.green }} /> : <Menu className="w-5 h-5" style={{ color: C.green }} />}
+            {open ? <X className="w-6 h-6" style={{ color: C.green }} /> : <Menu className="w-6 h-6" style={{ color: C.green }} />}
           </button>
           {open && (
             <div className="absolute right-0 top-14 w-56 rounded-2xl overflow-hidden z-50"
               style={{ background: "white", border: `1px solid ${C.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
               {NAV_LINKS.map((l) => (
                 <a key={l.label} href={l.href} onClick={() => setOpen(false)}
-                  className="flex items-center px-5 py-3.5 text-xs font-semibold uppercase tracking-wider transition-colors hover:bg-green-50"
+                  className="flex items-center px-5 py-3.5 text-sm font-bold uppercase tracking-wider transition-colors hover:bg-green-50"
                   style={{ color: C.muted, borderBottom: `1px solid ${C.border}`, letterSpacing: "0.08em" }}>
                   {l.label}
                 </a>
               ))}
+              <a href="https://bceptafl.givebacks.com/shop" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}
+                className="flex items-center px-5 py-3.5 text-sm font-bold uppercase tracking-wider transition-colors"
+                style={{ color: C.green, letterSpacing: "0.08em" }}>
+                PTA Shop
+              </a>
             </div>
           )}
         </div>
@@ -288,7 +296,7 @@ function HeroSection() {
         {/* Eyebrow */}
         <div className="flex items-center gap-3 mb-8">
           <div className="h-px w-12" style={{ background: C.gold }} />
-          <p className="text-xs font-semibold tracking-[0.3em] uppercase" style={{ color: C.gold }}>
+          <p className="text-sm font-bold tracking-[0.3em] uppercase" style={{ color: C.gold }}>
             Bessey Creek Elementary · PTA
           </p>
           <div className="h-px w-12" style={{ background: C.gold }} />
@@ -297,7 +305,7 @@ function HeroSection() {
         {/* Logo with multi-ring shadow */}
         <div className="relative mb-9">
           <div className="absolute inset-0 rounded-full blur-2xl scale-110" style={{ background: `${C.gold}33` }} />
-          <Image src={LOGO_URL} alt="Bessey Creek Elementary School" width={150} height={150} priority
+          <Image src={LOGO_URL} alt="Bessey Creek Elementary School" width={160} height={160} priority
             className="relative rounded-full"
             style={{ 
               border: `3px solid ${C.gold}88`, 
@@ -306,13 +314,13 @@ function HeroSection() {
         </div>
 
         {/* Title — editorial sizing */}
-        <h1 className="mb-5" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-          <span className="block text-xl font-normal tracking-[0.25em] uppercase mb-2" style={{ color: `${C.gold}` }}>
+        <h1 className="mb-6" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+          <span className="block text-xl font-bold tracking-[0.25em] uppercase mb-2" style={{ color: `${C.gold}` }}>
             Welcome to
           </span>
           <span className="block font-black" style={{ 
             color: "white", 
-            fontSize: "clamp(3rem, 7vw, 5.5rem)", 
+            fontSize: "clamp(3.2rem, 7vw, 6rem)", 
             lineHeight: 1.02, 
             letterSpacing: "-0.025em" 
           }}>
@@ -320,13 +328,13 @@ function HeroSection() {
           </span>
         </h1>
 
-        <p className="max-w-xl text-base leading-relaxed mb-12" style={{ color: "rgba(255,255,255,0.95)" }}>
+        <p className="max-w-xl text-lg font-medium leading-relaxed mb-12" style={{ color: "rgba(255,255,255,0.95)" }}>
           Your hub for community progress, upcoming events, volunteer opportunities, and everything that makes Bessey Creek Elementary extraordinary.
         </p>
 
         {/* CTA buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
-          <a href="#volunteer" className="px-9 py-4 rounded-full text-sm font-bold tracking-wider uppercase transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+          <a href="#volunteer" className="px-10 py-4 rounded-full text-base font-black tracking-wider uppercase transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
             style={{ 
               background: `linear-gradient(135deg, ${C.gold}, #f0c75e)`, 
               color: C.greenDark, 
@@ -335,8 +343,8 @@ function HeroSection() {
             }}>
             Log Volunteer Hours
           </a>
-          <a href="#events" className="px-9 py-4 rounded-full text-sm font-bold tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-green-900"
-            style={{ border: `1.5px solid ${C.gold}88`, color: "white", letterSpacing: "0.1em" }}>
+          <a href="#events" className="px-10 py-4 rounded-full text-base font-black tracking-wider uppercase transition-all duration-300 hover:bg-white hover:text-green-900"
+            style={{ border: `2px solid ${C.gold}88`, color: "white", letterSpacing: "0.1em" }}>
             View Events
           </a>
         </div>
@@ -345,10 +353,10 @@ function HeroSection() {
         <div className="flex flex-wrap justify-center gap-8 sm:gap-14">
           {["Stay Safe", "Take Responsibility", "Actively Learn", "Respect Others"].map((v) => (
             <div key={v} className="flex items-center gap-2">
-              <span className="text-xl font-black" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>
+              <span className="text-2xl font-black" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>
                 {v[0]}
               </span>
-              <span className="text-xs tracking-wide" style={{ color: "rgba(255,255,255,0.85)" }}>{v.slice(2)}</span>
+              <span className="text-sm font-semibold tracking-wide" style={{ color: "rgba(255,255,255,0.90)" }}>{v.slice(2)}</span>
             </div>
           ))}
         </div>
@@ -362,7 +370,7 @@ function HeroSection() {
 // ═════════════════════════════════════════════════════════════
 function Section({ id, children, cream = false }: { id?: string; children: React.ReactNode; cream?: boolean }) {
   return (
-    <section id={id} className="py-24 scroll-mt-20" style={{ background: cream ? C.cream : "white" }}>
+    <section id={id} className="py-24 scroll-mt-20" style={{ background: cream ? C.greenBg : "white" }}>
       <div className="max-w-7xl mx-auto px-6">{children}</div>
     </section>
   );
@@ -371,10 +379,10 @@ function Section({ id, children, cream = false }: { id?: string; children: React
 function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div className="text-center mb-16">
-      <p className="text-xs font-semibold tracking-[0.3em] uppercase mb-3" style={{ color: C.gold }}>
+      <p className="text-sm font-bold tracking-[0.3em] uppercase mb-3" style={{ color: C.gold }}>
         {eyebrow}
       </p>
-      <h2 className="text-4xl md:text-5xl font-black" style={{ 
+      <h2 className="text-5xl md:text-6xl font-black" style={{ 
         color: C.green, 
         fontFamily: "'Playfair Display', Georgia, serif", 
         letterSpacing: "-0.02em" 
@@ -391,7 +399,7 @@ function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
 // ═════════════════════════════════════════════════════════════
 function StarValuesSection() {
   return (
-    <section className="py-12" style={{ 
+    <section className="py-14" style={{ 
       background: C.green, 
       borderTop: `2px solid ${C.gold}44`, 
       borderBottom: `2px solid ${C.gold}44` 
@@ -399,17 +407,17 @@ function StarValuesSection() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {STAR_VALUES.map(({ icon: Icon, letter, label, accent }) => (
-            <div key={letter} className="group flex items-center gap-4 p-6 rounded-2xl transition-all duration-300 cursor-default hover:scale-[1.02]"
+            <div key={letter} className="group flex items-center gap-4 p-7 rounded-2xl transition-all duration-300 cursor-default hover:scale-[1.02]"
               style={{ background: `rgba(255,255,255,0.12)`, border: `1px solid ${C.gold}44` }}>
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+              <div className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ background: `${C.gold}33`, border: `1.5px solid ${C.gold}66` }}>
                 <span className="text-2xl font-black" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>{letter}</span>
               </div>
               <div>
-                <p className="text-xs font-bold tracking-wider uppercase mb-0.5" style={{ color: C.gold }}>
+                <p className="text-sm font-black tracking-wider uppercase mb-1" style={{ color: C.gold }}>
                   {label.split(" ")[0]}
                 </p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.85)" }}>{label.split(" ").slice(1).join(" ")}</p>
+                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.90)" }}>{label.split(" ").slice(1).join(" ")}</p>
               </div>
             </div>
           ))}
@@ -422,21 +430,21 @@ function StarValuesSection() {
 // ═════════════════════════════════════════════════════════════
 // DASHBOARD — Circular SVG progress rings
 // ═════════════════════════════════════════════════════════════
-function ProgressRing({ value, max, color, size = 140 }: { value: number; max: number; color: string; size?: number }) {
+function ProgressRing({ value, max, color, size = 150 }: { value: number; max: number; color: string; size?: number }) {
   const pct = Math.min(100, (value / max) * 100);
   const r = 45;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
   return (
     <svg width={size} height={size} viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r={r} fill="none" stroke={`${color}22`} strokeWidth="7" />
-      <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="7"
+      <circle cx="50" cy="50" r={r} fill="none" stroke={`${color}22`} strokeWidth="8" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="8"
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
         transform="rotate(-90 50 50)" style={{ transition: "stroke-dasharray 1.2s ease" }} />
-      <text x="50" y="45" textAnchor="middle" fill={color} fontSize="18" fontWeight="900" fontFamily="Georgia, serif">
+      <text x="50" y="44" textAnchor="middle" fill={color} fontSize="20" fontWeight="900" fontFamily="Georgia, serif">
         {Math.round(pct)}%
       </text>
-      <text x="50" y="62" textAnchor="middle" fill={color} fontSize="7" fontFamily="sans-serif" opacity="0.7">
+      <text x="50" y="64" textAnchor="middle" fill={color} fontSize="8" fontWeight="600" fontFamily="sans-serif" opacity="0.8">
         of goal
       </text>
     </svg>
@@ -459,21 +467,21 @@ function DashboardSection({ data }: { data: DashboardData | null }) {
             boxShadow: "0 10px 50px rgba(45,155,78,0.08)" 
           }}>
           <div className="h-2 w-full absolute top-0 left-0 rounded-t-3xl" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
-          <ProgressRing value={d.fundraisingCurrent} max={d.fundraisingGoal} color={C.gold} size={150} />
+          <ProgressRing value={d.fundraisingCurrent} max={d.fundraisingGoal} color={C.gold} size={160} />
           <div className="text-center sm:text-left">
-            <p className="text-xs font-semibold tracking-[0.24em] uppercase mb-2" style={{ color: C.gold }}>Fundraising</p>
-            <p className="text-5xl font-black mb-2" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
+            <p className="text-sm font-black tracking-[0.24em] uppercase mb-3" style={{ color: C.gold }}>Fundraising</p>
+            <p className="text-5xl font-black mb-3" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
               {fmt(d.fundraisingCurrent)}
             </p>
-            <p className="text-sm mb-5" style={{ color: C.muted }}>raised of {fmt(d.fundraisingGoal)} goal</p>
-            <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.gold}22`, width: "100%", maxWidth: 200 }}>
+            <p className="text-base font-bold mb-5" style={{ color: C.muted }}>raised of {fmt(d.fundraisingGoal)} goal</p>
+            <div className="h-2.5 rounded-full overflow-hidden" style={{ background: `${C.gold}22`, width: "100%", maxWidth: 220 }}>
               <div className="h-full rounded-full transition-all duration-1000"
                 style={{ 
                   width: `${Math.min(100, (d.fundraisingCurrent / d.fundraisingGoal) * 100)}%`, 
                   background: `linear-gradient(90deg, ${C.gold}aa, ${C.gold})` 
                 }} />
             </div>
-            <p className="text-xs mt-3" style={{ color: C.muted }}>{fmt(d.fundraisingGoal - d.fundraisingCurrent)} remaining</p>
+            <p className="text-sm font-semibold mt-3" style={{ color: C.muted }}>{fmt(d.fundraisingGoal - d.fundraisingCurrent)} remaining</p>
           </div>
         </div>
 
@@ -485,21 +493,21 @@ function DashboardSection({ data }: { data: DashboardData | null }) {
             boxShadow: "0 10px 50px rgba(45,155,78,0.08)" 
           }}>
           <div className="h-2 w-full absolute top-0 left-0 rounded-t-3xl" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
-          <ProgressRing value={d.volunteerHoursCurrent} max={d.volunteerHoursGoal} color={C.green} size={150} />
+          <ProgressRing value={d.volunteerHoursCurrent} max={d.volunteerHoursGoal} color={C.green} size={160} />
           <div className="text-center sm:text-left">
-            <p className="text-xs font-semibold tracking-[0.24em] uppercase mb-2" style={{ color: C.green }}>Volunteer Hours</p>
-            <p className="text-5xl font-black mb-2" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
-              {d.volunteerHoursCurrent}<span className="text-2xl font-medium" style={{ color: C.muted }}>h</span>
+            <p className="text-sm font-black tracking-[0.24em] uppercase mb-3" style={{ color: C.green }}>Volunteer Hours</p>
+            <p className="text-5xl font-black mb-3" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
+              {d.volunteerHoursCurrent}<span className="text-2xl font-bold" style={{ color: C.muted }}>h</span>
             </p>
-            <p className="text-sm mb-5" style={{ color: C.muted }}>of {d.volunteerHoursGoal}h annual goal</p>
-            <div className="h-2 rounded-full overflow-hidden" style={{ background: `${C.green}22`, width: "100%", maxWidth: 200 }}>
+            <p className="text-base font-bold mb-5" style={{ color: C.muted }}>of {d.volunteerHoursGoal}h annual goal</p>
+            <div className="h-2.5 rounded-full overflow-hidden" style={{ background: `${C.green}22`, width: "100%", maxWidth: 220 }}>
               <div className="h-full rounded-full transition-all duration-1000"
                 style={{ 
                   width: `${Math.min(100, (d.volunteerHoursCurrent / d.volunteerHoursGoal) * 100)}%`, 
                   background: `linear-gradient(90deg, ${C.greenDark}aa, ${C.green})` 
                 }} />
             </div>
-            {d.nextEventName && <p className="text-xs mt-3" style={{ color: C.muted }}>Next: {d.nextEventName} · {d.nextEventDate}</p>}
+            {d.nextEventName && <p className="text-sm font-semibold mt-3" style={{ color: C.muted }}>Next: {d.nextEventName} · {d.nextEventDate}</p>}
           </div>
         </div>
       </div>
@@ -521,7 +529,7 @@ function EventCard({ event, index, total }: { event: SchoolEvent; index: number;
     <div className="flex gap-7 group">
       {/* Timeline */}
       <div className="flex flex-col items-center flex-shrink-0">
-        <div className="w-5 h-5 rounded-full mt-1 transition-all duration-300 group-hover:scale-125 group-hover:shadow-xl"
+        <div className="w-6 h-6 rounded-full mt-1 transition-all duration-300 group-hover:scale-125 group-hover:shadow-xl"
           style={{ background: accent, boxShadow: `0 0 0 5px ${accent}22` }} />
         {index < total - 1 && (
           <div className="flex-1 w-0.5 mt-3" 
@@ -538,16 +546,16 @@ function EventCard({ event, index, total }: { event: SchoolEvent; index: number;
             boxShadow: "0 4px 20px rgba(0,0,0,0.05)" 
           }}>
           <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-            <h3 className="font-bold text-lg" style={{ color: C.ink, fontFamily: "Georgia, serif" }}>
+            <h3 className="font-black text-xl" style={{ color: C.ink, fontFamily: "Georgia, serif" }}>
               {event.title}
             </h3>
-            <span className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0"
+            <span className="text-xs font-black px-3 py-1.5 rounded-full flex-shrink-0"
               style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}44` }}>
               {event.category}
             </span>
           </div>
-          <p className="text-sm leading-relaxed mb-5" style={{ color: C.muted }}>{event.description}</p>
-          <div className="flex flex-wrap gap-5 text-xs" style={{ color: C.muted }}>
+          <p className="text-base font-medium leading-relaxed mb-5" style={{ color: C.muted }}>{event.description}</p>
+          <div className="flex flex-wrap gap-5 text-sm font-semibold" style={{ color: C.muted }}>
             <span className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4" style={{ color: accent }} />{event.date}
             </span>
@@ -571,7 +579,7 @@ function EventTimelineSection({ events }: { events: SchoolEvent[] | null }) {
       <SectionHeader eyebrow="What's Coming Up" title="Event Timeline" />
       <div className="max-w-3xl mx-auto max-h-[650px] overflow-y-auto pr-3">
         {list.length === 0
-          ? <p className="text-center py-16" style={{ color: C.muted }}>No upcoming events found.</p>
+          ? <p className="text-center py-16 text-lg font-semibold" style={{ color: C.muted }}>No upcoming events found.</p>
           : list.map((e, i) => <EventCard key={e.id ?? i} event={e} index={i} total={list.length} />)}
       </div>
     </Section>
@@ -637,17 +645,17 @@ function VolunteerFormSection() {
           {status === "success" && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 rounded-3xl"
               style={{ background: "rgba(250,250,247,0.98)", backdropFilter: "blur(10px)" }}>
-              <div className="w-24 h-24 rounded-full flex items-center justify-center"
+              <div className="w-28 h-28 rounded-full flex items-center justify-center"
                 style={{ background: C.greenLight, border: `3px solid ${C.green}` }}>
-                <CheckCircle className="w-12 h-12" style={{ color: C.green }} />
+                <CheckCircle className="w-14 h-14" style={{ color: C.green }} />
               </div>
               <div className="text-center">
-                <h3 className="text-3xl font-black mb-2" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
+                <h3 className="text-4xl font-black mb-3" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
                   Hours Logged!
                 </h3>
-                <p className="text-sm" style={{ color: C.muted }}>Thank you — your hours have been recorded.</p>
+                <p className="text-base font-semibold" style={{ color: C.muted }}>Thank you — your hours have been recorded.</p>
               </div>
-              <button onClick={reset} className="px-10 py-3.5 rounded-full text-sm font-bold tracking-wider uppercase text-white transition-all hover:opacity-90"
+              <button onClick={reset} className="px-12 py-4 rounded-full text-base font-black tracking-wider uppercase text-white transition-all hover:opacity-90"
                 style={{ background: C.green, letterSpacing: "0.1em" }}>
                 Log More Hours
               </button>
@@ -657,65 +665,65 @@ function VolunteerFormSection() {
           <div className="p-10 space-y-6">
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                   Full Name <span style={{ color: C.red }}>*</span>
                 </label>
                 <input type="text" placeholder="Jane Gator" value={form.volunteerName} onChange={set("volunteerName")}
                   onBlur={touch("volunteerName")} maxLength={100} autoComplete="name"
                   className={inputCls(!!touched.volunteerName && !!errors.volunteerName)}
                   style={{ borderColor: touched.volunteerName && errors.volunteerName ? "#f87171" : C.border }} />
-                {touched.volunteerName && errors.volunteerName && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.volunteerName}</p>}
+                {touched.volunteerName && errors.volunteerName && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>{errors.volunteerName}</p>}
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                   Email <span style={{ color: C.red }}>*</span>
                 </label>
                 <input type="email" placeholder="jane@example.com" value={form.volunteerEmail} onChange={set("volunteerEmail")}
                   onBlur={touch("volunteerEmail")} maxLength={254} autoComplete="email"
                   className={inputCls(!!touched.volunteerEmail && !!errors.volunteerEmail)}
                   style={{ borderColor: touched.volunteerEmail && errors.volunteerEmail ? "#f87171" : C.border }} />
-                {touched.volunteerEmail && errors.volunteerEmail && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.volunteerEmail}</p>}
+                {touched.volunteerEmail && errors.volunteerEmail && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>{errors.volunteerEmail}</p>}
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                   Event Name <span style={{ color: C.red }}>*</span>
                 </label>
                 <input type="text" placeholder="Spring Carnival" value={form.eventName} onChange={set("eventName")}
                   onBlur={touch("eventName")} maxLength={150}
                   className={inputCls(!!touched.eventName && !!errors.eventName)}
                   style={{ borderColor: touched.eventName && errors.eventName ? "#f87171" : C.border }} />
-                {touched.eventName && errors.eventName && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.eventName}</p>}
+                {touched.eventName && errors.eventName && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>{errors.eventName}</p>}
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                   Hours <span style={{ color: C.red }}>*</span>
                 </label>
                 <input type="number" placeholder="2.5" min="0.5" max="24" step="0.5" value={form.hoursLogged}
                   onChange={set("hoursLogged")} onBlur={touch("hoursLogged")}
                   className={inputCls(!!touched.hoursLogged && !!errors.hoursLogged)}
                   style={{ borderColor: touched.hoursLogged && errors.hoursLogged ? "#f87171" : C.border }} />
-                {touched.hoursLogged && errors.hoursLogged && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.hoursLogged}</p>}
+                {touched.hoursLogged && errors.hoursLogged && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>{errors.hoursLogged}</p>}
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+              <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                 Notes <span className="font-normal normal-case" style={{ color: C.silver }}>(optional)</span>
               </label>
               <textarea rows={4} placeholder="What did you help with?" value={form.notes} onChange={set("notes")}
                 maxLength={500} className={inputCls() + " resize-none"}
                 style={{ borderColor: C.border }} />
-              <p className="text-right text-xs mt-2" style={{ color: C.silver }}>{form.notes.length}/500</p>
+              <p className="text-right text-sm font-semibold mt-2" style={{ color: C.silver }}>{form.notes.length}/500</p>
             </div>
             {status === "error" && (
-              <div className="flex items-center gap-3 p-4 rounded-xl text-sm"
+              <div className="flex items-center gap-3 p-4 rounded-xl text-base font-semibold"
                 style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.red }}>
                 <AlertCircle className="w-5 h-5 flex-shrink-0" /><span>{errorMsg}</span>
               </div>
             )}
             <button onClick={handleSubmit} disabled={status === "loading"}
-              className={["w-full py-4 rounded-xl text-sm font-bold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2",
+              className={["w-full py-4 rounded-xl text-base font-black tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2",
                 status === "loading" ? "opacity-50 cursor-not-allowed" : "hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5"].join(" ")}
               style={{
                 background: status === "loading" ? "#ccc" : `linear-gradient(135deg, ${C.green}, ${C.greenDark})`,
@@ -754,26 +762,26 @@ function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
         boxShadow: isGold ? `0 6px 30px ${C.gold}44` : "0 4px 16px rgba(0,0,0,0.05)",
       }}>
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden font-black text-xl"
+        <div className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden font-black text-xl"
           style={{ background: `${tier.color}22`, border: `1.5px solid ${tier.color}66`, color: tier.color, fontFamily: "Georgia, serif" }}>
           {sponsor.logoUrl
-            ? <Image src={sponsor.logoUrl} alt={sponsor.name} width={56} height={56} className="object-contain" />
+            ? <Image src={sponsor.logoUrl} alt={sponsor.name} width={64} height={64} className="object-contain" />
             : sponsor.name[0]}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-bold text-base leading-tight" style={{ color: C.ink }}>
+            <h3 className="font-black text-lg leading-tight" style={{ color: C.ink }}>
               {sponsor.name}
             </h3>
-            {isGold && <Star className="w-4 h-4 flex-shrink-0" style={{ fill: C.gold, color: C.gold }} />}
+            {isGold && <Star className="w-5 h-5 flex-shrink-0" style={{ fill: C.gold, color: C.gold }} />}
           </div>
-          <p className="text-xs font-semibold tracking-wide uppercase mb-2" style={{ color: tier.color }}>
+          <p className="text-xs font-black tracking-wide uppercase mb-2" style={{ color: tier.color }}>
             {tier.label}
           </p>
-          {sponsor.tagline && <p className="text-xs leading-relaxed mb-2" style={{ color: C.muted }}>{sponsor.tagline}</p>}
+          {sponsor.tagline && <p className="text-sm font-medium leading-relaxed mb-2" style={{ color: C.muted }}>{sponsor.tagline}</p>}
           {sponsor.website && (
             <a href={sponsor.website} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs mt-2 font-semibold transition-opacity hover:opacity-70"
+              className="inline-flex items-center gap-1.5 text-sm mt-2 font-bold transition-opacity hover:opacity-70"
               style={{ color: tier.color }}>
               Visit <ChevronRight className="w-3 h-3" />
             </a>
@@ -787,14 +795,14 @@ function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
 function SponsorShowcaseSection({ sponsors }: { sponsors: Sponsor[] | null }) {
   const list = sponsors ?? FALLBACK_SPONSORS;
   return (
-    <Section id="sponsors" cream>
+    <Section id="sponsors">
       <SectionHeader eyebrow="Community Partners" title="Our Sponsors" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         {list.map((s, i) => <SponsorCard key={s.id ?? i} sponsor={s} />)}
       </div>
-      <p className="text-center text-sm" style={{ color: C.muted }}>
+      <p className="text-center text-base font-semibold" style={{ color: C.muted }}>
         Interested in becoming a partner?{" "}
-        <a href="#contact" className="font-semibold underline underline-offset-2" style={{ color: C.green }}>
+        <a href="#contact" className="font-black underline underline-offset-2" style={{ color: C.green }}>
           Contact the PTA →
         </a>
       </p>
@@ -807,12 +815,12 @@ function SponsorShowcaseSection({ sponsors }: { sponsors: Sponsor[] | null }) {
 // ═════════════════════════════════════════════════════════════
 function CalendarSection() {
   return (
-    <Section id="calendar">
+    <Section id="calendar" cream>
       <SectionHeader eyebrow="Stay Organized" title="School Calendar" />
       <div className="rounded-3xl overflow-hidden"
         style={{ border: `1px solid ${C.border}`, boxShadow: "0 20px 70px rgba(45,155,78,0.10)" }}>
         <div className="h-2" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
-        <iframe src={CALENDAR_URL} className="w-full" style={{ height: 560, border: 0, display: "block" }}
+        <iframe src={CALENDAR_URL} className="w-full" style={{ height: 600, border: 0, display: "block" }}
           title="Bessey Creek Elementary School Calendar" loading="lazy" />
       </div>
     </Section>
@@ -862,44 +870,45 @@ function ContactSection() {
   const reset = () => { setStatus("idle"); setErrorMsg(""); };
 
   return (
-    <Section id="contact" cream>
+    <Section id="contact">
       <SectionHeader eyebrow="Get Involved" title="Contact the PTA" />
       <div className="grid md:grid-cols-5 gap-10 max-w-5xl mx-auto">
         {/* Info */}
         <div className="md:col-span-2 space-y-6">
-          <div className="rounded-2xl p-7" style={{ background: C.green }}>
-            <p className="text-xs font-semibold tracking-[0.24em] uppercase mb-6" style={{ color: C.gold }}>
+          <div className="rounded-2xl p-8" style={{ background: C.green }}>
+            <p className="text-sm font-black tracking-[0.24em] uppercase mb-6" style={{ color: C.gold }}>
               Reach Us
             </p>
             {[
-              { icon: Mail,  text: "pta@besseycreek.edu", href: "mailto:pta@besseycreek.edu" },
-              { icon: Phone, text: "(772) 545-0350",       href: "tel:7725450350" },
-              { icon: MapPin,text: "2000 SW Bessey Creek Rd, Palm City, FL", href: undefined },
+              { icon: Mail,  text: "residencybce@martin.k12.fl.us", href: "mailto:residencybce@martin.k12.fl.us" },
+              { icon: Phone, text: "(772) 219-1500", href: "tel:7722191500" },
+              { icon: MapPin,text: "2201 SW Matheson Avenue, Palm City, FL", href: "https://maps.google.com/?q=2201+SW+Matheson+Avenue+Palm+City+FL" },
+              { icon: Globe, text: "martinschools.org/o/bces", href: "https://martinschools.org/o/bces" },
             ].map(({ icon: Icon, text, href }) => (
               <div key={text} className="flex items-start gap-4 mb-5 last:mb-0">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                   style={{ background: `${C.gold}33`, border: `1px solid ${C.gold}55` }}>
-                  <Icon className="w-4 h-4" style={{ color: C.gold }} />
+                  <Icon className="w-5 h-5" style={{ color: C.gold }} />
                 </div>
-                {href
-                  ? <a href={href} className="text-sm hover:opacity-80 transition-opacity" style={{ color: "rgba(255,255,255,0.95)" }}>{text}</a>
-                  : <span className="text-sm" style={{ color: "rgba(255,255,255,0.85)" }}>{text}</span>}
+                <a href={href} target="_blank" rel="noopener noreferrer" className="text-base font-semibold hover:opacity-80 transition-opacity" style={{ color: "rgba(255,255,255,0.95)" }}>
+                  {text}
+                </a>
               </div>
             ))}
           </div>
 
-          <div className="rounded-2xl p-7" style={{ background: C.greenLight, border: `1px solid ${C.border}` }}>
-            <p className="text-xs font-semibold tracking-[0.24em] uppercase mb-5" style={{ color: C.green }}>Follow Us</p>
+          <div className="rounded-2xl p-8" style={{ background: C.greenLight, border: `1px solid ${C.border}` }}>
+            <p className="text-sm font-black tracking-[0.24em] uppercase mb-6" style={{ color: C.green }}>Follow Us</p>
             <div className="flex gap-4">
               {[
-                { icon: Facebook,  label: "Facebook",  href: "https://www.facebook.com/BesseyCreekElementary" },
-                { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/" },
-                { icon: Youtube,   label: "YouTube",   href: "https://www.youtube.com/" },
+                { icon: Facebook,  label: "Facebook",  href: "https://www.facebook.com/BCEGators/" },
+                { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/besseycreekelementary/" },
+                { icon: Globe,     label: "PTA Shop",  href: "https://bceptafl.givebacks.com/shop" },
               ].map(({ icon: Icon, label, href }) => (
                 <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
-                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg"
+                  className="w-14 h-14 rounded-xl flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg"
                   style={{ background: "white", border: `1px solid ${C.border}` }}>
-                  <Icon className="w-5 h-5" style={{ color: C.green }} />
+                  <Icon className="w-6 h-6" style={{ color: C.green }} />
                 </a>
               ))}
             </div>
@@ -919,17 +928,17 @@ function ContactSection() {
             {status === "success" && (
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 rounded-3xl"
                 style={{ background: "rgba(250,250,247,0.98)", backdropFilter: "blur(10px)" }}>
-                <div className="w-24 h-24 rounded-full flex items-center justify-center"
+                <div className="w-28 h-28 rounded-full flex items-center justify-center"
                   style={{ background: C.greenLight, border: `3px solid ${C.green}` }}>
-                  <CheckCircle className="w-12 h-12" style={{ color: C.green }} />
+                  <CheckCircle className="w-14 h-14" style={{ color: C.green }} />
                 </div>
                 <div className="text-center">
-                  <h3 className="text-3xl font-black mb-2" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
+                  <h3 className="text-4xl font-black mb-3" style={{ color: C.green, fontFamily: "Georgia, serif" }}>
                     Message Sent!
                   </h3>
-                  <p className="text-sm" style={{ color: C.muted }}>We&apos;ll get back to you soon.</p>
+                  <p className="text-base font-semibold" style={{ color: C.muted }}>We&apos;ll get back to you soon.</p>
                 </div>
-                <button onClick={reset} className="px-10 py-3.5 rounded-full text-sm font-bold tracking-wider uppercase text-white hover:opacity-90"
+                <button onClick={reset} className="px-12 py-4 rounded-full text-base font-black tracking-wider uppercase text-white hover:opacity-90"
                   style={{ background: C.green, letterSpacing: "0.1em" }}>Send Another</button>
               </div>
             )}
@@ -937,54 +946,54 @@ function ContactSection() {
             <div className="p-10 space-y-6">
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                  <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                     Name <span style={{ color: C.red }}>*</span>
                   </label>
                   <input type="text" placeholder="Your name" value={form.contactName} onChange={set("contactName")}
                     onBlur={touch("contactName")} maxLength={100}
                     className={inputCls(!!touched.contactName && !!errors.contactName)}
                     style={{ borderColor: touched.contactName && errors.contactName ? "#f87171" : C.border }} />
-                  {touched.contactName && errors.contactName && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.contactName}</p>}
+                  {touched.contactName && errors.contactName && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>{errors.contactName}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                  <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                     Email <span style={{ color: C.red }}>*</span>
                   </label>
                   <input type="email" placeholder="your@email.com" value={form.contactEmail} onChange={set("contactEmail")}
                     onBlur={touch("contactEmail")} maxLength={254}
                     className={inputCls(!!touched.contactEmail && !!errors.contactEmail)}
                     style={{ borderColor: touched.contactEmail && errors.contactEmail ? "#f87171" : C.border }} />
-                  {touched.contactEmail && errors.contactEmail && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.contactEmail}</p>}
+                  {touched.contactEmail && errors.contactEmail && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>{errors.contactEmail}</p>}
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                   Subject <span style={{ color: C.red }}>*</span>
                 </label>
                 <input type="text" placeholder="How can we help?" value={form.subject} onChange={set("subject")}
                   onBlur={touch("subject")} maxLength={200}
                   className={inputCls(!!touched.subject && !!errors.subject)}
                   style={{ borderColor: touched.subject && errors.subject ? "#f87171" : C.border }} />
-                {touched.subject && errors.subject && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.subject}</p>}
+                {touched.subject && errors.subject && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>{errors.subject}</p>}
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-2.5" style={{ color: C.muted }}>
+                <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
                   Message <span style={{ color: C.red }}>*</span>
                 </label>
                 <textarea rows={5} placeholder="Your message…" value={form.message} onChange={set("message")}
                   onBlur={touch("message")} maxLength={500}
                   className={inputCls(!!touched.message && !!errors.message) + " resize-none"}
                   style={{ borderColor: touched.message && errors.message ? "#f87171" : C.border }} />
-                {touched.message && errors.message && <p className="text-xs mt-2" style={{ color: C.red }}>{errors.message}</p>}
+                {touched.message && errors.message && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>{errors.message}</p>}
               </div>
               {status === "error" && (
-                <div className="flex items-center gap-3 p-4 rounded-xl text-sm"
+                <div className="flex items-center gap-3 p-4 rounded-xl text-base font-semibold"
                   style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.red }}>
                   <AlertCircle className="w-5 h-5 flex-shrink-0" /><span>{errorMsg}</span>
                 </div>
               )}
               <button onClick={handleSubmit} disabled={status === "loading"}
-                className={["w-full py-4 rounded-xl text-sm font-bold tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2",
+                className={["w-full py-4 rounded-xl text-base font-black tracking-wider uppercase transition-all duration-300 flex items-center justify-center gap-2",
                   status === "loading" ? "opacity-50 cursor-not-allowed" : "hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5"].join(" ")}
                 style={{
                   background: status === "loading" ? "#ccc" : `linear-gradient(135deg, ${C.green}, ${C.greenDark})`,
@@ -1011,24 +1020,27 @@ function Footer() {
     <footer style={{ background: C.green, borderTop: `2px solid ${C.gold}66` }}>
       <div className="max-w-7xl mx-auto px-6 py-20">
         <div className="flex flex-col items-center text-center">
-          <Image src={LOGO_URL} alt="Bessey Creek Elementary" width={80} height={80} className="rounded-full mb-6"
+          <Image src={LOGO_URL} alt="Bessey Creek Elementary" width={90} height={90} className="rounded-full mb-7"
             style={{ border: `3px solid ${C.gold}66`, opacity: 0.95 }} />
-          <p className="text-xs font-semibold tracking-[0.3em] uppercase mb-2" style={{ color: C.gold }}>
+          <p className="text-sm font-bold tracking-[0.3em] uppercase mb-3" style={{ color: C.gold }}>
             Bessey Creek Elementary
           </p>
-          <p className="text-3xl font-black mb-8" style={{ color: "white", fontFamily: "'Playfair Display', Georgia, serif" }}>
+          <p className="text-4xl font-black mb-10" style={{ color: "white", fontFamily: "'Playfair Display', Georgia, serif" }}>
             The Gator Grid
           </p>
           {/* Divider */}
-          <div className="flex items-center gap-5 mb-8 w-full max-w-md">
+          <div className="flex items-center gap-5 mb-10 w-full max-w-md">
             <div className="flex-1 h-px" style={{ background: `${C.gold}55` }} />
             <div className="w-2 h-2 rotate-45" style={{ background: `${C.gold}88` }} />
             <div className="flex-1 h-px" style={{ background: `${C.gold}55` }} />
           </div>
-          <p className="text-xs tracking-widest mb-3" style={{ color: "rgba(255,255,255,0.75)" }}>
+          <p className="text-sm font-bold tracking-widest mb-4" style={{ color: "rgba(255,255,255,0.80)" }}>
             STAY SAFE · TAKE RESPONSIBILITY · ACTIVELY LEARN · RESPECT OTHERS
           </p>
-          <p className="text-xs mt-6" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <p className="text-sm font-semibold mb-3" style={{ color: "rgba(255,255,255,0.70)" }}>
+            2201 SW Matheson Avenue, Palm City, FL
+          </p>
+          <p className="text-sm mt-6 font-semibold" style={{ color: "rgba(255,255,255,0.60)" }}>
             © {new Date().getFullYear()} Bessey Creek Elementary PTA · All rights reserved
           </p>
         </div>
