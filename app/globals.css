@@ -5,7 +5,7 @@
 /* ══════════════════════════════════════════════════════════════
    GOOGLE FONTS — Lato (body) + Playfair Display (headings)
    ══════════════════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lato:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lato:wght@300;400;600;700;800;900&display=swap');
 
 /* ══════════════════════════════════════════════════════════════
    CSS VARIABLES — Logo-Matched Palette
@@ -13,6 +13,7 @@
 :root {
   --green:       #2D9B4E;   /* vibrant green from logo */
   --green-dark:  #1e7039;
+  --green-bg:    #e8f5ec;   /* soft green background */
   --gold:        #D4AF37;   /* rich gold */
   --cream:       #fafaf7;
   --red:         #c0392b;
@@ -42,14 +43,15 @@ body {
   color: #1a1f1a;
   margin: 0;
   line-height: 1.6;
+  font-weight: 500;
 }
 
 /* ══════════════════════════════════════════════════════════════
    CUSTOM SCROLLBAR — Vibrant green
    ══════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -83,7 +85,7 @@ body {
   }
 
   .gator-btn-primary {
-    @apply font-bold tracking-wide rounded-xl transition-all duration-300 text-white;
+    @apply font-black tracking-wide rounded-xl transition-all duration-300 text-white;
     background: linear-gradient(135deg, #2D9B4E, #1e7039);
     box-shadow: 0 6px 28px rgba(45, 155, 78, 0.35);
     letter-spacing: 0.1em;
@@ -105,14 +107,14 @@ body {
   }
 
   .gator-section-title {
-    @apply text-3xl md:text-4xl font-black tracking-tight;
+    @apply text-4xl md:text-5xl font-black tracking-tight;
     color: var(--green);
     font-family: 'Playfair Display', Georgia, serif;
     letter-spacing: -0.02em;
   }
 
   .gator-input {
-    @apply w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-gray-800 placeholder-gray-400;
+    @apply w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-base font-medium text-gray-800 placeholder-gray-400;
     @apply focus:outline-none focus:ring-2 focus:border-yellow-500 focus:ring-yellow-100 transition-all duration-200;
   }
 
@@ -184,12 +186,13 @@ h1, h2, h3, h4, h5, h6 {
 p {
   font-family: 'Lato', sans-serif;
   line-height: 1.7;
+  font-weight: 500;
 }
 
 /* Small caps for eyebrows */
 .eyebrow {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 700;
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--gold);
