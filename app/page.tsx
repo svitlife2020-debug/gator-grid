@@ -639,7 +639,6 @@ function VolunteerFormSection() {
             border: `1px solid ${C.border}`, 
             boxShadow: "0 20px 70px rgba(45,155,78,0.12)" 
           }}>
-          {/* Gold accent bar */}
           <div className="h-2" style={{ background: `linear-gradient(90deg, ${C.green}, ${C.gold}, ${C.green})` }} />
 
           {status === "success" && (
