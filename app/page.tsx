@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
   CalendarDays, Star, Gift,
-  CheckCircle, Clock, MapPin, Loader2, AlertCircle, ChevronRight,
+  CheckCircle, Clock, MapPin, Loader2, AlertCircle,
   Sparkles, X, Menu, Bell, Mail, Phone, Facebook, Instagram,
-  Globe, ExternalLink,
+  Globe, ExternalLink, ShoppingBag,
 } from "lucide-react";
 
 interface DashboardData {
@@ -32,6 +32,9 @@ interface WishlistItem {
   id: string; teacherName: string; grade: string;
   item: string; storeLink?: string;
   priority: "High" | "Medium" | "Low"; notes?: string;
+}
+interface WishlistClaim {
+  itemId: string; claimedBy: string; timestamp: string;
 }
 interface VolunteerFormData {
   volunteerName: string; volunteerEmail: string;
@@ -563,22 +566,138 @@ function VolunteerFormSection() {
   );
 }
 
+// ── Claim Modal ───────────────────────────────────────────────
+function ClaimModal({ item, onClose, onClaim }: {
+  item: WishlistItem;
+  onClose: () => void;
+  onClaim: (itemId: string, name: string) => Promise<void>;
+}) {
+  const [name, setName]     = useState("");
+  const [status, setStatus] = useState<FormStatus>("idle");
+
+  const handleClaim = async () => {
+    if (!name.trim()) return;
+    setStatus("loading");
+    try {
+      await onClaim(item.id, sanitizeInput(name));
+      setStatus("success");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full max-w-md rounded-3xl overflow-hidden"
+        style={{ background: "white", boxShadow: "0 30px 80px rgba(0,0,0,0.25)" }}>
+        <div className="h-2" style={{ background: `linear-gradient(90deg,${C.green},${C.gold},${C.green})` }} />
+        {status === "success" ? (
+          <div className="p-12 flex flex-col items-center text-center gap-5">
+            <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: C.greenLight, border: `3px solid ${C.green}` }}>
+              <CheckCircle className="w-12 h-12" style={{ color: C.green }} />
+            </div>
+            <h3 className="text-3xl font-black" style={{ color: C.green, fontFamily: "Georgia,serif" }}>You&apos;re a Gator Hero! 🐊</h3>
+            <p className="text-base font-semibold" style={{ color: C.muted }}>
+              Thank you, <strong>{name}</strong>! You&apos;ve claimed <strong>{item.item}</strong> for {item.teacherName}. The teacher will be so grateful!
+            </p>
+            <button onClick={onClose} className="mt-2 px-10 py-3 rounded-full font-black uppercase text-white hover:opacity-90"
+              style={{ background: C.green, letterSpacing: "0.1em" }}>Done</button>
+          </div>
+        ) : (
+          <div className="p-8">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <p className="text-xs font-black tracking-[0.25em] uppercase mb-1" style={{ color: C.gold }}>I&apos;ll Get This!</p>
+                <h3 className="text-xl font-black" style={{ color: C.ink }}>{item.item}</h3>
+                <p className="text-sm font-semibold mt-1" style={{ color: C.green }}>{item.teacherName} · {item.grade}</p>
+              </div>
+              <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100">
+                <X className="w-5 h-5" style={{ color: C.muted }} />
+              </button>
+            </div>
+            {item.notes && (
+              <div className="rounded-xl p-4 mb-6" style={{ background: C.greenLight, border: `1px solid ${C.border}` }}>
+                <p className="text-sm font-semibold" style={{ color: C.muted }}>📝 Teacher&apos;s note: {item.notes}</p>
+              </div>
+            )}
+            <div className="mb-6">
+              <label className="block text-sm font-black uppercase tracking-wider mb-3" style={{ color: C.muted }}>
+                Your First Name <span style={{ color: C.red }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Sarah"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleClaim(); }}
+                maxLength={50}
+                autoFocus
+                className={inputCls(!name.trim() && status === "error")}
+                style={{ borderColor: !name.trim() && status === "error" ? "#f87171" : C.border }}
+              />
+              {!name.trim() && status === "error" && <p className="text-sm font-semibold mt-2" style={{ color: C.red }}>Please enter your name.</p>}
+            </div>
+            {item.storeLink && (
+              <a href={item.storeLink} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 mb-6 text-sm font-bold hover:opacity-80"
+                style={{ color: C.blue }}>
+                <ExternalLink className="w-4 h-4" /> View item on store website →
+              </a>
+            )}
+            <button onClick={handleClaim} disabled={status === "loading"}
+              className={["w-full py-4 rounded-xl text-base font-black uppercase flex items-center justify-center gap-2 transition-all",
+                status === "loading" ? "opacity-50 cursor-not-allowed" : "hover:opacity-90 hover:-translate-y-0.5"].join(" ")}
+              style={{ background: `linear-gradient(135deg,${C.green},${C.greenDark})`, color: "white", letterSpacing: "0.1em", boxShadow: `0 6px 24px ${C.green}55` }}>
+              {status === "loading" ? <><Loader2 className="w-5 h-5 animate-spin" />Saving…</> : <><ShoppingBag className="w-5 h-5" />Claim This Item</>}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Wishlist Section ──────────────────────────────────────────
 const PRIORITY_META = {
   High:   { color: C.red,   bg: "#fef2f2",    label: "High Priority"   },
   Medium: { color: C.gold,  bg: C.goldLight,  label: "Medium Priority" },
   Low:    { color: C.green, bg: C.greenLight, label: "Low Priority"    },
 };
 
-function WishlistSection({ items }: { items: WishlistItem[] | null }) {
-  const list = items ?? FALLBACK_WISHLIST;
-  const [filter, setFilter] = useState<"All" | "High" | "Medium" | "Low">("All");
-  const filtered = filter === "All" ? list : list.filter(i => i.priority === filter);
+function WishlistSection({ items, claims, onClaim }: {
+  items: WishlistItem[] | null;
+  claims: WishlistClaim[];
+  onClaim: (itemId: string, name: string) => Promise<void>;
+}) {
+  const list     = items ?? FALLBACK_WISHLIST;
+  const [filter, setFilter]       = useState<"All" | "High" | "Medium" | "Low">("All");
+  const [claimingItem, setClaimingItem] = useState<WishlistItem | null>(null);
+
+  const claimedIds = new Set(claims.map(c => String(c.itemId)));
+  const filtered   = filter === "All" ? list : list.filter(i => i.priority === filter);
+  const totalNeeded  = list.filter(i => !claimedIds.has(String(i.id))).length;
+  const totalClaimed = list.filter(i => claimedIds.has(String(i.id))).length;
+
   return (
     <Section id="wishlist" cream>
       <SectionHeader eyebrow="Support Our Teachers" title="Teacher Wishlist" />
-      <p className="text-center text-base font-medium mb-8 -mt-6" style={{ color: C.muted }}>
-        Help teachers get the supplies they need — every item makes a difference in the classroom!
-      </p>
+
+      {/* Stats bar */}
+      <div className="flex flex-wrap justify-center gap-6 mb-10 -mt-6">
+        <div className="flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm"
+          style={{ background: C.greenLight, border: `1px solid ${C.border}`, color: C.green }}>
+          <Gift className="w-4 h-4" /> {totalNeeded} items still needed
+        </div>
+        <div className="flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm"
+          style={{ background: "#fef2f2", border: "1px solid #fecaca", color: C.red }}>
+          <CheckCircle className="w-4 h-4" style={{ color: C.green }} />
+          <span style={{ color: C.green }}>{totalClaimed} claimed by our community</span>
+        </div>
+      </div>
+
+      {/* Filters */}
       <div className="flex flex-wrap justify-center gap-3 mb-10">
         {(["All", "High", "Medium", "Low"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
@@ -588,40 +707,80 @@ function WishlistSection({ items }: { items: WishlistItem[] | null }) {
           </button>
         ))}
       </div>
+
+      {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((item, i) => {
-          const p = PRIORITY_META[item.priority] ?? PRIORITY_META["Low"];
+          const p       = PRIORITY_META[item.priority] ?? PRIORITY_META["Low"];
+          const claimed = claimedIds.has(String(item.id));
+          const claim   = claims.find(c => String(c.itemId) === String(item.id));
           return (
-            <div key={item.id ?? i} className="rounded-2xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-              style={{ background: "white", border: `1px solid ${C.border}`, boxShadow: "0 4px 16px rgba(0,0,0,0.05)" }}>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: p.bg }}>
-                  <Gift className="w-5 h-5" style={{ color: p.color }} />
+            <div key={item.id ?? i}
+              className="rounded-2xl p-6 transition-all duration-300 hover:shadow-lg relative"
+              style={{
+                background:  claimed ? "#f8faf8" : "white",
+                border:      `1px solid ${claimed ? C.green + "44" : C.border}`,
+                boxShadow:   "0 4px 16px rgba(0,0,0,0.05)",
+                opacity:     claimed ? 0.75 : 1,
+              }}>
+
+              {/* Claimed ribbon */}
+              {claimed && (
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                  style={{ background: C.green, color: "white" }}>
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span className="text-xs font-black">Claimed</span>
                 </div>
-                <span className="text-xs font-black px-2.5 py-1 rounded-full" style={{ background: p.bg, color: p.color }}>{p.label}</span>
+              )}
+
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: p.bg }}>
+                  <Gift className="w-5 h-5" style={{ color: claimed ? C.silver : p.color }} />
+                </div>
+                {!claimed && (
+                  <span className="text-xs font-black px-2.5 py-1 rounded-full mt-0.5" style={{ background: p.bg, color: p.color }}>{p.label}</span>
+                )}
               </div>
-              <h3 className="font-black text-base mb-1" style={{ color: C.ink }}>{item.item}</h3>
+
+              <h3 className="font-black text-base mb-1" style={{ color: C.ink, textDecoration: claimed ? "line-through" : "none", textDecorationColor: C.silver }}>{item.item}</h3>
               <p className="text-sm font-bold mb-1" style={{ color: C.green }}>{item.teacherName}</p>
               <p className="text-xs font-semibold mb-3" style={{ color: C.muted }}>{item.grade}</p>
               {item.notes && <p className="text-xs font-medium leading-relaxed mb-4" style={{ color: C.silver }}>{item.notes}</p>}
-              {item.storeLink ? (
-                <a href={item.storeLink} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-wider hover:opacity-90"
-                  style={{ background: C.green, color: "white", letterSpacing: "0.06em" }}>
-                  <ExternalLink className="w-4 h-4" /> Buy Now
-                </a>
+
+              {claimed ? (
+                <p className="text-xs font-black" style={{ color: C.green }}>
+                  ✓ Getting this: <span style={{ color: C.ink }}>{claim?.claimedBy}</span>
+                </p>
               ) : (
-                <p className="text-xs font-semibold" style={{ color: C.silver }}>Available at most supply stores</p>
+                <button
+                  onClick={() => setClaimingItem(item)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-wider hover:opacity-90 hover:-translate-y-0.5 transition-all"
+                  style={{ background: C.green, color: "white", letterSpacing: "0.06em" }}>
+                  <ShoppingBag className="w-4 h-4" /> I&apos;ll Get This!
+                </button>
               )}
             </div>
           );
         })}
       </div>
+
       {filtered.length === 0 && <p className="text-center py-10 text-base font-semibold" style={{ color: C.muted }}>No items at this priority level. 🎉</p>}
+
       <p className="text-center text-sm font-semibold mt-8" style={{ color: C.muted }}>
         Teachers: update your wishlist via the school&apos;s Google Sheet ·{" "}
         <a href="#contact" style={{ color: C.green }} className="font-black underline">Contact the PTA →</a>
       </p>
+
+      {claimingItem && (
+        <ClaimModal
+          item={claimingItem}
+          onClose={() => setClaimingItem(null)}
+          onClaim={async (itemId, name) => {
+            await onClaim(itemId, name);
+            setClaimingItem(null);
+          }}
+        />
+      )}
     </Section>
   );
 }
@@ -837,6 +996,7 @@ export default function GatorGridPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]   | null>(null);
   const [principal,     setPrincipal]     = useState<PrincipalMessage | null>(null);
   const [wishlist,      setWishlist]      = useState<WishlistItem[]   | null>(null);
+  const [claims,        setClaims]        = useState<WishlistClaim[]>([]);
   const [mounted,       setMounted]       = useState(false);
 
   useEffect(() => {
@@ -848,7 +1008,18 @@ export default function GatorGridPage() {
       fetchTab<Announcement[]>  ("Announcements",    FALLBACK_ANNOUNCEMENTS).then(setAnnouncements),
       fetchTab<PrincipalMessage>("PrincipalMessage", FALLBACK_PRINCIPAL).then(setPrincipal),
       fetchTab<WishlistItem[]>  ("TeacherWishlist",  FALLBACK_WISHLIST).then(setWishlist),
+      fetchTab<WishlistClaim[]> ("WishlistClaims",   []).then(setClaims),
     ]);
+  }, []);
+
+  const handleClaim = useCallback(async (itemId: string, name: string) => {
+    await postToSheet({
+      tab: "WishlistClaims",
+      itemId,
+      claimedBy: name,
+      timestamp: new Date().toISOString(),
+    });
+    setClaims(prev => [...prev, { itemId, claimedBy: name, timestamp: new Date().toISOString() }]);
   }, []);
 
   const dashData = mounted ? dashboard  : FALLBACK_DASHBOARD;
@@ -867,7 +1038,7 @@ export default function GatorGridPage() {
       <DashboardSection data={dashData} />
       <EventTimelineSection events={evData} />
       <VolunteerFormSection />
-      <WishlistSection items={wishData} />
+      <WishlistSection items={wishData} claims={claims} onClaim={handleClaim} />
       <SponsorShowcaseSection sponsors={spData} />
       <ContactSection />
       <Footer />
