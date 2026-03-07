@@ -50,7 +50,7 @@ function isValidEmail(e: string): boolean {
 // ═════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═════════════════════════════════════════════════════════════
-const API_URL = "https://script.google.com/macros/s/AKfycbz4lb3YslgAVDobLHrha7RgCyV1tGrf5GNlk42Lb1DV4n914NNfVaSReQL4nkJYqs0BiA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxhrhbumi52sQWYiDrGqjBKTqtcq9hksD0XuNchhHBF-Q4X3Q2wUgcfHiZv7K6YeT3oWw/exec";
 const LOGO_URL = "https://cmsv2-assets.apptegy.net/uploads/7712/logo/8923/Martin_County_Bessey_Creek_Circle_Crest_Logo__2_.png";
 const CALENDAR_URL = "https://www.martinschools.org/o/bces/events?view=cal-month";
 
