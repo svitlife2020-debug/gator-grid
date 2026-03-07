@@ -80,13 +80,6 @@ const NAV_LINKS = [
   { label: "Contact",   href: "#contact" },
 ];
 
-const STAR_VALUES = [
-  { icon: Shield,      letter: "S", label: "Stay Safe",           accent: C.green, bg: C.greenLight },
-  { icon: CheckCircle, letter: "T", label: "Take Responsibility", accent: C.red,   bg: "#fdecea" },
-  { icon: BookOpen,    letter: "A", label: "Actively Learn",      accent: C.blue,  bg: "#e8f0fb" },
-  { icon: Heart,       letter: "R", label: "Respect Others",      accent: C.gold,  bg: C.goldLight },
-];
-
 // ═════════════════════════════════════════════════════════════
 // FALLBACK DATA
 // ═════════════════════════════════════════════════════════════
@@ -333,7 +326,7 @@ function HeroSection() {
         </p>
 
         {/* CTA buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <a href="#volunteer" className="px-10 py-4 rounded-full text-base font-black tracking-wider uppercase transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
             style={{ 
               background: `linear-gradient(135deg, ${C.gold}, #f0c75e)`, 
@@ -347,18 +340,6 @@ function HeroSection() {
             style={{ border: `2px solid ${C.gold}88`, color: "white", letterSpacing: "0.1em" }}>
             View Events
           </a>
-        </div>
-
-        {/* S.T.A.R. strip — horizontal layout */}
-        <div className="flex flex-wrap justify-center gap-8 sm:gap-14">
-          {["Stay Safe", "Take Responsibility", "Actively Learn", "Respect Others"].map((v) => (
-            <div key={v} className="flex items-center gap-2">
-              <span className="text-2xl font-black" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>
-                {v[0]}
-              </span>
-              <span className="text-sm font-semibold tracking-wide" style={{ color: "rgba(255,255,255,0.90)" }}>{v.slice(2)}</span>
-            </div>
-          ))}
         </div>
       </div>
     </section>
@@ -391,39 +372,6 @@ function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
       </h2>
       {diamondDivider}
     </div>
-  );
-}
-
-// ═════════════════════════════════════════════════════════════
-// STAR VALUES — Vibrant green band
-// ═════════════════════════════════════════════════════════════
-function StarValuesSection() {
-  return (
-    <section className="py-14" style={{ 
-      background: C.green, 
-      borderTop: `2px solid ${C.gold}44`, 
-      borderBottom: `2px solid ${C.gold}44` 
-    }}>
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {STAR_VALUES.map(({ icon: Icon, letter, label, accent }) => (
-            <div key={letter} className="group flex items-center gap-4 p-7 rounded-2xl transition-all duration-300 cursor-default hover:scale-[1.02]"
-              style={{ background: `rgba(255,255,255,0.12)`, border: `1px solid ${C.gold}44` }}>
-              <div className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: `${C.gold}33`, border: `1.5px solid ${C.gold}66` }}>
-                <span className="text-2xl font-black" style={{ color: C.gold, fontFamily: "Georgia, serif" }}>{letter}</span>
-              </div>
-              <div>
-                <p className="text-sm font-black tracking-wider uppercase mb-1" style={{ color: C.gold }}>
-                  {label.split(" ")[0]}
-                </p>
-                <p className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.90)" }}>{label.split(" ").slice(1).join(" ")}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -1033,9 +981,6 @@ function Footer() {
             <div className="w-2 h-2 rotate-45" style={{ background: `${C.gold}88` }} />
             <div className="flex-1 h-px" style={{ background: `${C.gold}55` }} />
           </div>
-          <p className="text-sm font-bold tracking-widest mb-4" style={{ color: "rgba(255,255,255,0.80)" }}>
-            STAY SAFE · TAKE RESPONSIBILITY · ACTIVELY LEARN · RESPECT OTHERS
-          </p>
           <p className="text-sm font-semibold mb-3" style={{ color: "rgba(255,255,255,0.70)" }}>
             2201 SW Matheson Avenue, Palm City, FL
           </p>
@@ -1078,7 +1023,6 @@ export default function GatorGridPage() {
       <AnnouncementBanner announcements={annData} />
       <Navbar />
       <HeroSection />
-      <StarValuesSection />
       <DashboardSection data={dashData} />
       <EventTimelineSection events={evData} />
       <VolunteerFormSection />
